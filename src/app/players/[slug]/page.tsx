@@ -32,7 +32,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
     { label: "Match win %", value: fmtPct(pct(r.matchWins, r.matchLosses)) },
     { label: "Game record", value: `${r.gameWins}-${r.gameLosses}` },
     { label: "Points", value: String(r.points) },
-    { label: "Best win streak", value: String(r.longestWinStreak) },
+    { label: "MVP cards", value: String(data.matches.filter((m) => m.mvp?.player?.id === player.id).length) },
   ];
 
   return (

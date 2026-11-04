@@ -1,5 +1,5 @@
 {
-  "id": "bcc60c10-1ebb-4b9f-baa5-6350e5627525",
+  "id": "dc0614e5-92f9-4782-abcb-5bdb3b4aa176",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -196,6 +196,36 @@
           "primaryKey": false,
           "notNull": false
         },
+        "mvp_card_name": {
+          "name": "mvp_card_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mvp_card_scryfall_id": {
+          "name": "mvp_card_scryfall_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mvp_card_image": {
+          "name": "mvp_card_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mvp_card_url": {
+          "name": "mvp_card_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mvp_player_id": {
+          "name": "mvp_player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -212,6 +242,19 @@
           "tableTo": "sets",
           "columnsFrom": [
             "set_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "matches_mvp_player_id_players_id_fk": {
+          "name": "matches_mvp_player_id_players_id_fk",
+          "tableFrom": "matches",
+          "tableTo": "players",
+          "columnsFrom": [
+            "mvp_player_id"
           ],
           "columnsTo": [
             "id"

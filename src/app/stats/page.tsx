@@ -1,6 +1,6 @@
 import { connection } from "next/server";
-import { Card, Empty, PageTitle, Pips, WinBar } from "@/components/ui";
-import { colorStats, fmtPct, gameStats, loadLeague, playerStandings } from "@/lib/league";
+import { Card, CardImage, Empty, PageTitle, Pips, WinBar } from "@/components/ui";
+import { colorStats, fmtPct, gameStats, loadLeague, mvpCardCounts, mvpPlayerCounts, playerStandings } from "@/lib/league";
 
 export const metadata = { title: "Stats" };
 
@@ -9,6 +9,8 @@ export default async function StatsPage() {
   const data = await loadLeague();
   const { colors, combos } = colorStats(data.matches);
   const g = gameStats(data.matches);
+  const mvpCards = mvpCardCounts(data.matches);
+  const mvpPlayers = mvpPlayerCounts(data);
 
   const tiles = [
     { label: "Matches", value: String(data.matches.length) },
@@ -39,6 +41,32 @@ export default async function StatsPage() {
           </div>
         ))}
       </div>
+
+      <Card title="MVP cards">
+        {mvpCards.length === 0 ? (
+          <Empty>No MVP cards picked yet.</Empty>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+              {mvpCards.slice(0, 6).map((c) => (
+                <div key={c.name} className="text-center text-xs">
+                  <CardImage name={c.name} image={c.image} url={c.url} className="w-full" />
+                  <div className="mt-1 truncate font-medium">{c.name}</div>
+                  <div className="text-muted">
+                    {c.count} MVP{c.count === 1 ? "" : "s"}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {mvpPlayers.length > 0 && (
+              <p className="mt-4 text-sm text-muted">
+                MVP cards played:{" "}
+                {mvpPlayers.map((x) => `${x.player.name} ${x.count}`).join(" · ")}
+              </p>
+            )}
+          </>
+        )}
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Win rate by color">

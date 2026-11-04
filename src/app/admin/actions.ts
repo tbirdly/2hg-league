@@ -25,6 +25,15 @@ function str(form: FormData, key: string) {
   return typeof v === "string" ? v.trim() : "";
 }
 
+function onlyHttps(value: string, host: string): string | null {
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" && u.hostname === host ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function side(v: string): "A" | "B" | null {
   return v === "A" || v === "B" ? v : null;
 }
@@ -81,6 +90,16 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
   }
   if (gameRows.some((g, i) => g.gameNumber !== i + 1)) return { error: "Fill in games in order (1, 2, then 3)." };
 
+  const mvpCardName = str(form, "mvpCardName").slice(0, 200) || null;
+  const mvpPlayerId = Number(str(form, "mvpPlayerId")) || null;
+  if (mvpPlayerId && !seats.some((s) => s.playerId === mvpPlayerId)) {
+    return { error: "The MVP card's player has to be one of the four players in the match." };
+  }
+  // Only keep Scryfall links/images; anything else is dropped.
+  const mvpCardImage = mvpCardName ? onlyHttps(str(form, "mvpCardImage"), "cards.scryfall.io") : null;
+  const mvpCardUrl = mvpCardName ? onlyHttps(str(form, "mvpCardUrl"), "scryfall.com") : null;
+  const mvpCardScryfallId = mvpCardName ? str(form, "mvpCardScryfallId").slice(0, 64) || null : null;
+
   const [match] = await db
     .insert(schema.matches)
     .values({
@@ -88,6 +107,11 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
       setId,
       format: str(form, "format") || null,
       notes: str(form, "notes") || null,
+      mvpCardName,
+      mvpCardScryfallId,
+      mvpCardImage,
+      mvpCardUrl,
+      mvpPlayerId: mvpCardName ? mvpPlayerId : null,
     })
     .returning();
   try {

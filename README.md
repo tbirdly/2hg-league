@@ -9,7 +9,8 @@ Teams change every session, so the site keeps a record for each **player** (the 
 - Every best-of-3 match: date, set, format, both teams, and the colors each player's deck used
 - Every game: who won, who was on the play, number of turns, and how it ended
 - Standings: 3 points per match win, tiebreaker game win %
-- Player pages: record with each teammate, win rate by color
+- MVP card for each match (card search and images from Scryfall), plus who played it
+- Player pages: record with each teammate, win rate by color, MVP cards
 - Teams: record for every pairing and head-to-head results
 - Stats: color and color-pair win rates, sweeps, comebacks, on-the-play win rate, game length, per-set leaders
 

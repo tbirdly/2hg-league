@@ -32,6 +32,13 @@ export const matches = pgTable("matches", {
   /** draft, sealed, constructed, other */
   format: text("format"),
   notes: text("notes"),
+  /** MVP card of the match, looked up on Scryfall. */
+  mvpCardName: text("mvp_card_name"),
+  mvpCardScryfallId: text("mvp_card_scryfall_id"),
+  mvpCardImage: text("mvp_card_image"),
+  mvpCardUrl: text("mvp_card_url"),
+  /** Who played the MVP card. */
+  mvpPlayerId: integer("mvp_player_id").references(() => players.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -44,7 +44,13 @@ async function main() {
     const order = [...allPlayers].sort(() => rand() - 0.5);
     const [m] = await db
       .insert(matches)
-      .values({ playedOn: day.toISOString().slice(0, 10), setId: set.id, format: "draft" })
+      .values({
+        playedOn: day.toISOString().slice(0, 10),
+        setId: set.id,
+        format: "draft",
+        mvpCardName: pick(["Lightning Bolt", "Llanowar Elves", "Counterspell", "Serra Angel", "Shivan Dragon"]),
+        mvpPlayerId: pick(order.slice(0, 4)).id,
+      })
       .returning();
     await db.insert(matchPlayers).values(
       order.slice(0, 4).map((p, idx) => ({

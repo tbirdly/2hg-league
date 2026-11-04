@@ -136,7 +136,31 @@ export function MatchCard({ m }: { m: FullMatch }) {
         <SideLine m={m} side="A" compact />
         <SideLine m={m} side="B" compact />
       </div>
+      {m.mvp && (
+        <div className="mt-2 truncate text-xs text-muted">
+          MVP: <span className="text-accent">{m.mvp.name}</span>
+          {m.mvp.player && ` (${firstName(m.mvp.player.name)})`}
+        </div>
+      )}
     </div>
+  );
+}
+
+export function CardImage({ name, image, url, className = "w-56" }: { name: string; image: string | null; url: string | null; className?: string }) {
+  const inner = image ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={image} alt={name} className={`rounded-[4.5%/3.2%] shadow-lg ${className}`} loading="lazy" />
+  ) : (
+    <div className={`flex aspect-[488/680] items-center justify-center rounded-lg border border-line bg-card-2 p-3 text-center text-sm font-semibold ${className}`}>
+      {name}
+    </div>
+  );
+  return url ? (
+    <a href={url} target="_blank" rel="noreferrer" title={`${name} on Scryfall`}>
+      {inner}
+    </a>
+  ) : (
+    inner
   );
 }
 

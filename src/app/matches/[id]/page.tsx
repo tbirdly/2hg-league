@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Card, PageTitle, Pips } from "@/components/ui";
+import { Card, CardImage, PageTitle, Pips } from "@/components/ui";
 import { colorComboName, formatDate, loadLeague, pairName, sidePair, type Side } from "@/lib/league";
 
 export default async function MatchPage({ params }: PageProps<"/matches/[id]">) {
@@ -48,6 +48,25 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
           </Card>
         ))}
       </div>
+
+      {m.mvp && (
+        <Card title="MVP card">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+            <CardImage name={m.mvp.name} image={m.mvp.image} url={m.mvp.url} />
+            <div>
+              <div className="text-xl font-bold">{m.mvp.name}</div>
+              {m.mvp.player && (
+                <div className="mt-1 text-sm text-muted">
+                  Played by{" "}
+                  <Link href={`/players/${m.mvp.player.slug}`} className="text-text hover:underline">
+                    {m.mvp.player.name}
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Card title="Games">
         <table className="w-full text-sm">

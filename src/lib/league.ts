@@ -36,12 +36,20 @@ export function colorComboName(colors: string): string {
 
 export type MatchSeat = { player: Player; colors: string };
 
+export type MvpCard = {
+  name: string;
+  image: string | null;
+  url: string | null;
+  player: Player | null;
+};
+
 export type FullMatch = {
   id: number;
   playedOn: string;
   set: MtgSet | null;
   format: string | null;
   notes: string | null;
+  mvp: MvpCard | null;
   sides: Record<Side, MatchSeat[]>;
   games: (typeof schema.games.$inferSelect)[];
   score: Record<Side, number>;
@@ -87,6 +95,14 @@ export async function loadLeague(): Promise<LeagueData> {
       set: m.setId ? (setById.get(m.setId) ?? null) : null,
       format: m.format,
       notes: m.notes,
+      mvp: m.mvpCardName
+        ? {
+            name: m.mvpCardName,
+            image: m.mvpCardImage,
+            url: m.mvpCardUrl,
+            player: m.mvpPlayerId ? (playerById.get(m.mvpPlayerId) ?? null) : null,
+          }
+        : null,
       sides,
       games: g,
       score,
@@ -350,4 +366,25 @@ export function formatDate(iso: string): string {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+/** How often each card was named match MVP, most first. */
+export function mvpCardCounts(matches: FullMatch[]) {
+  const map = new Map<string, { name: string; image: string | null; url: string | null; count: number }>();
+  for (const m of matches) {
+    if (!m.mvp) continue;
+    const row = map.get(m.mvp.name) ?? { name: m.mvp.name, image: m.mvp.image, url: m.mvp.url, count: 0 };
+    row.count++;
+    row.image ??= m.mvp.image;
+    map.set(m.mvp.name, row);
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+/** Number of matches where each player played the MVP card. */
+export function mvpPlayerCounts(data: LeagueData) {
+  return data.players
+    .map((player) => ({ player, count: data.matches.filter((m) => m.mvp?.player?.id === player.id).length }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count);
 }

@@ -8,6 +8,7 @@ import {
   loginAction,
   type ActionResult,
 } from "./actions";
+import { CardSearch } from "./card-search";
 
 function Message({ state }: { state: ActionResult }) {
   if (state?.error) return <p className="text-sm text-loss">{state.error}</p>;
@@ -188,6 +189,22 @@ export function MatchForm({ players, sets, today }: { players: Option[]; sets: O
           </div>
         ))}
       </div>
+
+      <fieldset className="space-y-3 rounded-xl border border-line p-4">
+        <legend className="px-1 text-sm font-semibold">MVP card (optional)</legend>
+        <CardSearch />
+        <div>
+          <label className="mb-1 block text-xs text-muted">Played by</label>
+          <select name="mvpPlayerId" className="field sm:w-64" defaultValue="">
+            <option value="">–</option>
+            {players.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </fieldset>
 
       <div>
         <label className="mb-1 block text-xs text-muted">Notes</label>
