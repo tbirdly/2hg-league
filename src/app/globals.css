@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0e0b13;
+  --card: #18141f;
+  --card-2: #211b2b;
+  --line: #2e2739;
+  --text: #ece8f2;
+  --muted: #9a92a8;
+  --accent: #d9ad52;
+  --win: #4fbf7f;
+  --loss: #e0646a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.field {
+  @apply w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg hover:brightness-110 disabled:opacity-50;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-md border border-line px-3 py-1.5 text-sm text-text hover:border-accent;
+}
