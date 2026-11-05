@@ -1,5 +1,5 @@
 import type { PgDatabase } from "drizzle-orm/pg-core";
-import { players, sets } from "./schema";
+import { players } from "./schema";
 import { slugify } from "../lib/slug";
 
 export const STARTING_PLAYERS = [
@@ -9,17 +9,11 @@ export const STARTING_PLAYERS = [
   "Taylor Grigg",
 ];
 
-export const STARTING_SETS = ["Fractured Reality"];
-
-/** Adds the league's starting players and sets. Safe to run repeatedly. */
+/** Adds the league's starting players. Safe to run repeatedly. Sets come from Scryfall when matches are recorded. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function seedBase(db: PgDatabase<any, any>) {
   await db
     .insert(players)
     .values(STARTING_PLAYERS.map((name) => ({ name, slug: slugify(name) })))
-    .onConflictDoNothing();
-  await db
-    .insert(sets)
-    .values(STARTING_SETS.map((name) => ({ name })))
     .onConflictDoNothing();
 }

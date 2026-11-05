@@ -15,6 +15,13 @@
       "when": 1793883976568,
       "tag": "0001_life_totals_mvc_lvc",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793890830162,
+      "tag": "0002_remove_fractured_reality",
+      "breakpoints": true
     }
   ]
 }

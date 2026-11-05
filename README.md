@@ -16,14 +16,14 @@ Teams change every session, so the site keeps a record for each **player** (the 
 
 ## Recording results
 
-Go to `/admin` (link in the footer), sign in with the admin password, and click **Record a match**. You can also add players and sets there, edit or delete any match (Edit is also on each match page when you are signed in).
+Go to `/admin` (link in the footer), sign in with the admin password, and click **Record a match**. You can also add players and sets there, edit or delete any match (Edit is also on each match page when you are signed in). Sets are picked from Scryfall's list when you record a match.
 
 ## Deploying on Vercel
 
 1. Sign in at [vercel.com](https://vercel.com) with GitHub and choose **Add New → Project**, then import this repo.
 2. In the project, open **Storage → Create Database → Neon (Postgres)** and connect it to the project. This adds `DATABASE_URL` for you.
 3. In **Settings → Environment Variables**, add `ADMIN_PASSWORD` with the password you want for the admin page.
-4. Redeploy (Deployments → ⋯ → Redeploy). Each deploy creates or updates the database tables and adds the starting players and sets automatically.
+4. Redeploy (Deployments → ⋯ → Redeploy). Each deploy creates or updates the database tables and adds the starting players automatically.
 
 Every push to `main` deploys again on its own.
 

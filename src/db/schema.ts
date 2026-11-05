@@ -16,7 +16,7 @@ export const players = pgTable("players", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/** Magic sets, e.g. "Fractured Reality". */
+/** Magic sets, picked from Scryfall (name and set code). */
 export const sets = pgTable("sets", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),

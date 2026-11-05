@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db";
 import { requireAdmin, signIn, signOut } from "@/lib/auth";
@@ -117,24 +117,18 @@ async function parseMatchForm(form: FormData, db: Db) {
   }
 
   // Everything checks out; only now create a new set if one was typed in.
-  // The set comes from Scryfall's list (with its code) or is typed in; save it to the league's sets.
+  // Sets must come from Scryfall's list, identified by their set code.
   let setId: number | null = null;
-  let setName = str(form, "setName").slice(0, 120);
-  if (setName) {
-    // Reuse an existing set when only the capitalization differs.
-    const [same] = await db
-      .select({ name: schema.sets.name })
-      .from(schema.sets)
-      .where(sql`lower(${schema.sets.name}) = lower(${setName})`);
-    if (same) setName = same.name;
-    const code = str(form, "setCode").toUpperCase().slice(0, 8) || null;
+  const setName = str(form, "setName").slice(0, 120);
+  const setCode = str(form, "setCode").toUpperCase();
+  if (setName || setCode) {
+    if (!setName || !/^[A-Z0-9]{2,6}$/.test(setCode)) {
+      return { error: "Pick a set from the list." } as const;
+    }
     const [row] = await db
       .insert(schema.sets)
-      .values({ name: setName, code })
-      .onConflictDoUpdate({
-        target: schema.sets.name,
-        set: { code: sql`coalesce(excluded.code, ${schema.sets.code})` },
-      })
+      .values({ name: setName, code: setCode })
+      .onConflictDoUpdate({ target: schema.sets.name, set: { code: setCode } })
       .returning();
     setId = row.id;
   }
@@ -219,17 +213,4 @@ export async function addPlayerAction(_prev: ActionResult, form: FormData): Prom
     .onConflictDoNothing()
     .returning();
   return rows.length ? { ok: `Added ${name}.` } : { error: `${name} is already in the league.` };
-}
-
-export async function addSetAction(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  await requireAdmin();
-  const name = str(form, "name");
-  if (!name) return { error: "Enter a set name." };
-  const db = await getDb();
-  const rows = await db
-    .insert(schema.sets)
-    .values({ name, code: str(form, "code").toUpperCase() || null })
-    .onConflictDoNothing()
-    .returning();
-  return rows.length ? { ok: `Added ${name}.` } : { error: `${name} already exists.` };
 }

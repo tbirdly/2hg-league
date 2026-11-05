@@ -28,7 +28,11 @@ async function main() {
   await db.delete(matches);
 
   const allPlayers = await db.select().from(players);
-  const [set] = await db.select().from(sets);
+  const [set] = await db
+    .insert(sets)
+    .values({ name: "Foundations", code: "FDN" })
+    .onConflictDoUpdate({ target: sets.name, set: { code: "FDN" } })
+    .returning();
   const rand = rng(42);
   const pick = <T,>(xs: T[]) => xs[Math.floor(rand() * xs.length)];
   const deck = () => {

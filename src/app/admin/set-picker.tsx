@@ -9,10 +9,16 @@ type SetOption = { name: string; code: string | null; released: string | null };
 const SET_TYPES = new Set(["core", "expansion", "masters", "draft_innovation", "commander", "funny"]);
 
 /**
- * Set name box that suggests every Scryfall set (newest first) plus the league's own sets.
- * Submits setName and, when the name matches a Scryfall set, its setCode. A custom name is allowed.
+ * Set box that suggests every Scryfall paper set (newest first). Only a set from the list can be saved:
+ * it submits setName and setCode. If Scryfall can't be reached, sets the league already used still work.
  */
-export function SetPicker({ leagueSets, initialName }: { leagueSets: string[]; initialName: string }) {
+export function SetPicker({
+  leagueSets,
+  initialName,
+}: {
+  leagueSets: { name: string; code: string }[];
+  initialName: string;
+}) {
   const [value, setValue] = useState(initialName);
   const [scryfall, setScryfall] = useState<SetOption[]>([]);
   const [failed, setFailed] = useState(false);
@@ -34,14 +40,20 @@ export function SetPicker({ leagueSets, initialName }: { leagueSets: string[]; i
     return () => controller.abort();
   }, []);
 
-  const byName = new Map(scryfall.map((s) => [s.name.toLowerCase(), s]));
+  const known: SetOption[] = scryfall.length
+    ? scryfall
+    : leagueSets.map((s) => ({ name: s.name, code: s.code, released: null }));
+  const byName = new Map(known.map((s) => [s.name.toLowerCase(), s]));
   const match = byName.get(value.trim().toLowerCase());
-  const extra = leagueSets.filter((n) => !byName.has(n.toLowerCase()));
+  const loading = !failed && scryfall.length === 0;
+  const invalid = value.trim() !== "" && !match && !loading;
 
   return (
     <div>
       <input
         aria-label="Set"
+        aria-invalid={invalid}
+        ref={(el) => el?.setCustomValidity(invalid ? "Pick a set from the list." : "")}
         list="set-options"
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -50,28 +62,27 @@ export function SetPicker({ leagueSets, initialName }: { leagueSets: string[]; i
         className="field"
         autoComplete="off"
       />
-      {/* Save Scryfall's exact spelling when the typed name matches one of its sets. */}
-      <input type="hidden" name="setName" value={match?.name ?? value.trim()} />
+      {/* Save Scryfall's exact spelling and code for the chosen set. */}
+      <input type="hidden" name="setName" value={match?.name ?? ""} />
       <input type="hidden" name="setCode" value={match?.code ?? ""} />
       <datalist id="set-options">
-        {extra.map((n) => (
-          <option key={`league-${n}`} value={n} />
-        ))}
-        {scryfall.map((s) => (
+        {known.map((s) => (
           <option key={s.code} value={s.name}>
             {s.code}
             {s.released ? ` · ${s.released.slice(0, 4)}` : ""}
           </option>
         ))}
       </datalist>
-      <p className="mt-1 text-xs text-muted">
-        {failed
-          ? "Couldn't load Scryfall's set list. Type the set name."
-          : match
-            ? `${match.code}${match.released ? ` · released ${match.released}` : ""}`
-            : value.trim()
-              ? "Not a Scryfall set. It will be saved as typed."
-              : "Sets from Scryfall."}
+      <p className={`mt-1 text-xs ${invalid ? "text-loss" : "text-muted"}`}>
+        {match
+          ? `${match.code}${match.released ? ` · released ${match.released}` : ""}`
+          : loading
+            ? "Loading sets from Scryfall…"
+            : invalid
+              ? "Pick a set from the list."
+              : failed
+                ? "Couldn't reach Scryfall, so only sets you've used before are listed."
+                : "Sets from Scryfall."}
       </p>
     </div>
   );

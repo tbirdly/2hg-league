@@ -18,7 +18,8 @@ export default async function NewMatchPage() {
       <Card>
         <MatchForm
           players={data.players.map((p) => ({ id: p.id, name: p.name }))}
-          sets={data.sets.map((s) => ({ id: s.id, name: s.name }))}
+          sets={data.sets.map((s) => ({ id: s.id, name: s.name, code: s.code }))}
+          defaultSetName={data.matches.find((m) => m.set?.code)?.set?.name ?? ""}
           today={today}
         />
       </Card>

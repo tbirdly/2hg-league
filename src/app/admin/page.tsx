@@ -4,7 +4,7 @@ import { Card, PageTitle } from "@/components/ui";
 import { adminConfigured, isAdmin } from "@/lib/auth";
 import { formatDate, loadLeague, pairName, sidePair } from "@/lib/league";
 import { deleteMatchAction, logoutAction } from "./actions";
-import { AddNameForm, LoginForm } from "./forms";
+import { AddPlayerForm, LoginForm } from "./forms";
 
 export const metadata = { title: "Admin" };
 
@@ -46,11 +46,13 @@ export default async function AdminPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title={`Players (${data.players.length})`}>
           <p className="mb-3 text-sm text-muted">{data.players.map((p) => p.name).join(", ")}</p>
-          <AddNameForm kind="player" />
+          <AddPlayerForm />
         </Card>
         <Card title={`Sets (${data.sets.length})`}>
-          <p className="mb-3 text-sm text-muted">{data.sets.map((s) => s.name).join(", ") || "None yet"}</p>
-          <AddNameForm kind="set" />
+          <p className="text-sm text-muted">
+            {data.sets.map((s) => (s.code ? `${s.name} (${s.code})` : s.name)).join(", ") || "None yet"}
+          </p>
+          <p className="mt-2 text-xs text-muted">Sets come from Scryfall. Pick one when you record a match.</p>
         </Card>
       </div>
 

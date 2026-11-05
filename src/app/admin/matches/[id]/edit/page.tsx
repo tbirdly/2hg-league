@@ -48,7 +48,8 @@ export default async function EditMatchPage({ params }: PageProps<"/admin/matche
       <Card>
         <MatchForm
           players={players.map((p) => ({ id: p.id, name: p.name }))}
-          sets={sets.map((s) => ({ id: s.id, name: s.name }))}
+          sets={sets.map((s) => ({ id: s.id, name: s.name, code: s.code }))}
+          defaultSetName=""
           today={match.playedOn}
           initial={initial}
         />

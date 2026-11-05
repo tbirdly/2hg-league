@@ -3,7 +3,6 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import {
   addPlayerAction,
-  addSetAction,
   createMatchAction,
   loginAction,
   updateMatchAction,
@@ -31,13 +30,12 @@ export function LoginForm() {
   );
 }
 
-export function AddNameForm({ kind }: { kind: "player" | "set" }) {
-  const [state, action, pending] = useActionState(kind === "player" ? addPlayerAction : addSetAction, undefined);
+export function AddPlayerForm() {
+  const [state, action, pending] = useActionState(addPlayerAction, undefined);
   return (
     <form action={action} className="space-y-2">
       <div className="flex gap-2">
-        <input name="name" placeholder={kind === "player" ? "Player name" : "Set name"} className="field" required />
-        {kind === "set" && <input name="code" placeholder="Code" className="field w-24" maxLength={5} />}
+        <input name="name" placeholder="Player name" className="field" required />
         <button className="btn shrink-0" disabled={pending}>
           Add
         </button>
@@ -177,11 +175,13 @@ export function MatchForm({
   players,
   sets,
   today,
+  defaultSetName,
   initial,
 }: {
   players: Option[];
-  sets: Option[];
+  sets: (Option & { code: string | null })[];
   today: string;
+  defaultSetName: string;
   initial?: MatchInitial;
 }) {
   const [error, setError] = useState<string>();
@@ -220,10 +220,8 @@ export function MatchForm({
         <div>
           <label className="mb-1 block text-xs text-muted">Set</label>
           <SetPicker
-            leagueSets={sets.map((x) => x.name)}
-            initialName={
-              initial ? (sets.find((x) => x.id === initial.setId)?.name ?? "") : (sets[0]?.name ?? "")
-            }
+            leagueSets={sets.filter((x) => x.code).map((x) => ({ name: x.name, code: x.code! }))}
+            initialName={initial ? (sets.find((x) => x.id === initial.setId)?.name ?? "") : defaultSetName}
           />
         </div>
         <div>
