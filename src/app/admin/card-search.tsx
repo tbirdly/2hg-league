@@ -15,11 +15,19 @@ type ScryfallCard = {
 const API = "https://api.scryfall.com";
 
 /** Card name box with Scryfall autocomplete. Submits <prefix>CardName plus hidden Scryfall id, image and link. */
-export function CardSearch({ prefix }: { prefix: "mvc" | "lvc" }) {
-  const [query, setQuery] = useState("");
+export function CardSearch({
+  prefix,
+  initial,
+}: {
+  prefix: "mvc" | "lvc";
+  initial?: { name: string; scryfallId: string | null; image: string | null; url: string | null } | null;
+}) {
+  const [query, setQuery] = useState(initial?.name ?? "");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
-  const [picked, setPicked] = useState<Picked | null>(null);
+  const [picked, setPicked] = useState<Picked | null>(
+    initial ? { id: initial.scryfallId ?? "", name: initial.name, image: initial.image, url: initial.url } : null,
+  );
   const [status, setStatus] = useState<string>();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 

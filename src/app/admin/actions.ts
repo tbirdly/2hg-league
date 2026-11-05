@@ -62,31 +62,22 @@ function colorsFrom(form: FormData, key: string) {
   return COLOR_ORDER.filter((c) => picked.has(c)).join("");
 }
 
-export async function createMatchAction(form: FormData): Promise<ActionResult> {
-  await requireAdmin();
-  const db = await getDb();
+type Db = Awaited<ReturnType<typeof getDb>>;
 
+/** Reads and checks the match form. Returns an error message, or everything needed to save the match. */
+async function parseMatchForm(form: FormData, db: Db) {
   const playedOn = str(form, "playedOn");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(playedOn)) return { error: "Pick a date." };
-
-  let setId: number | null = Number(str(form, "setId")) || null;
-  const newSet = str(form, "newSet");
-  if (newSet) {
-    const [row] = await db
-      .insert(schema.sets)
-      .values({ name: newSet })
-      .onConflictDoUpdate({ target: schema.sets.name, set: { name: newSet } })
-      .returning();
-    setId = row.id;
-  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(playedOn)) return { error: "Pick a date." } as const;
 
   const seats = (["a1", "a2", "b1", "b2"] as const).map((k) => ({
     playerId: Number(str(form, `${k}_player`)),
     side: k.startsWith("a") ? "A" : "B",
     colors: colorsFrom(form, `${k}_colors`),
   }));
-  if (seats.some((s) => !s.playerId)) return { error: "Choose all four players." };
-  if (new Set(seats.map((s) => s.playerId)).size !== 4) return { error: "Each player can only be in a match once." };
+  if (seats.some((s) => !s.playerId)) return { error: "Choose all four players." } as const;
+  if (new Set(seats.map((s) => s.playerId)).size !== 4) {
+    return { error: "Each player can only be in a match once." } as const;
+  }
 
   const gameRows: {
     gameNumber: number;
@@ -99,35 +90,49 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
   for (const n of [1, 2, 3]) {
     const winner = side(str(form, `g${n}_winner`));
     if (!winner) continue;
-    if (won.A === 2 || won.B === 2) return { error: `Game ${n} has a winner but the match was already decided.` };
+    if (won.A === 2 || won.B === 2) {
+      return { error: `Game ${n} has a winner but the match was already decided. Clear game ${n}.` } as const;
+    }
     won[winner]++;
     const lifeA = life(str(form, `g${n}_lifeA`));
     const lifeB = life(str(form, `g${n}_lifeB`));
-    if (lifeA === undefined || lifeB === undefined) return { error: `Game ${n}: life totals must be whole numbers.` };
-    gameRows.push({
-      gameNumber: n,
-      winnerSide: winner,
-      onPlaySide: side(str(form, `g${n}_onPlay`)),
-      lifeA,
-      lifeB,
-    });
+    if (lifeA === undefined || lifeB === undefined) {
+      return { error: `Game ${n}: life totals must be whole numbers.` } as const;
+    }
+    gameRows.push({ gameNumber: n, winnerSide: winner, onPlaySide: side(str(form, `g${n}_onPlay`)), lifeA, lifeB });
   }
-  if (gameRows.length !== new Set(gameRows.map((g) => g.gameNumber)).size || won.A < 2 && won.B < 2) {
-    return { error: "A match ends when a team wins 2 games. Fill in each game's winner." };
+  if (won.A < 2 && won.B < 2) {
+    return { error: "A match ends when a team wins 2 games. Fill in each game's winner." } as const;
   }
-  if (gameRows.some((g, i) => g.gameNumber !== i + 1)) return { error: "Fill in games in order (1, 2, then 3)." };
+  if (gameRows.some((g, i) => g.gameNumber !== i + 1)) {
+    return { error: "Fill in games in order (1, 2, then 3)." } as const;
+  }
 
   const mvc = cardPick(form, "mvc");
   const lvc = cardPick(form, "lvc");
   for (const [label, pick] of [["MVC", mvc], ["LVC", lvc]] as const) {
     if (pick.playerId && !seats.some((s) => s.playerId === pick.playerId)) {
-      return { error: `The ${label}'s player has to be one of the four players in the match.` };
+      return { error: `The ${label}'s player has to be one of the four players in the match.` } as const;
     }
   }
 
-  const [match] = await db
-    .insert(schema.matches)
-    .values({
+  // Everything checks out; only now create a new set if one was typed in.
+  let setId: number | null = Number(str(form, "setId")) || null;
+  const newSet = str(form, "newSet");
+  if (newSet) {
+    const [row] = await db
+      .insert(schema.sets)
+      .values({ name: newSet })
+      .onConflictDoUpdate({ target: schema.sets.name, set: { name: newSet } })
+      .returning();
+    setId = row.id;
+  }
+
+  return {
+    error: null,
+    seats,
+    gameRows,
+    match: {
       playedOn,
       setId,
       format: str(form, "format") || null,
@@ -142,16 +147,44 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
       lvcCardImage: lvc.image,
       lvcCardUrl: lvc.url,
       lvcPlayerId: lvc.playerId,
-    })
-    .returning();
+    },
+  } as const;
+}
+
+export async function createMatchAction(form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const db = await getDb();
+  const parsed = await parseMatchForm(form, db);
+  if (parsed.error !== null) return { error: parsed.error };
+
+  const [match] = await db.insert(schema.matches).values(parsed.match).returning();
   try {
-    await db.insert(schema.matchPlayers).values(seats.map((s) => ({ ...s, matchId: match.id })));
-    await db.insert(schema.games).values(gameRows.map((g) => ({ ...g, matchId: match.id })));
+    await db.insert(schema.matchPlayers).values(parsed.seats.map((s) => ({ ...s, matchId: match.id })));
+    await db.insert(schema.games).values(parsed.gameRows.map((g) => ({ ...g, matchId: match.id })));
   } catch (err) {
     await db.delete(schema.matches).where(eq(schema.matches.id, match.id));
     throw err;
   }
   redirect(`/matches/${match.id}`);
+}
+
+export async function updateMatchAction(form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const id = Number(str(form, "matchId"));
+  if (!id) return { error: "Missing match." };
+  const db = await getDb();
+  const [existing] = await db.select({ id: schema.matches.id }).from(schema.matches).where(eq(schema.matches.id, id));
+  if (!existing) return { error: "That match no longer exists." };
+  const parsed = await parseMatchForm(form, db);
+  if (parsed.error !== null) return { error: parsed.error };
+
+  await db.update(schema.matches).set(parsed.match).where(eq(schema.matches.id, id));
+  // Replace the seats and games with what's on the form.
+  await db.delete(schema.matchPlayers).where(eq(schema.matchPlayers.matchId, id));
+  await db.delete(schema.games).where(eq(schema.games.matchId, id));
+  await db.insert(schema.matchPlayers).values(parsed.seats.map((s) => ({ ...s, matchId: id })));
+  await db.insert(schema.games).values(parsed.gameRows.map((g) => ({ ...g, matchId: id })));
+  redirect(`/matches/${id}`);
 }
 
 export async function deleteMatchAction(form: FormData) {

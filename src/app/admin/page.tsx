@@ -68,10 +68,15 @@ export default async function AdminPage() {
                   </span>{" "}
                   {b ? pairName(b) : "?"}
                 </Link>
-                <form action={deleteMatchAction}>
-                  <input type="hidden" name="id" value={m.id} />
-                  <button className="text-xs text-loss hover:underline">Delete</button>
-                </form>
+                <div className="flex items-center gap-4">
+                  <Link href={`/admin/matches/${m.id}/edit`} className="text-xs text-accent hover:underline">
+                    Edit
+                  </Link>
+                  <form action={deleteMatchAction}>
+                    <input type="hidden" name="id" value={m.id} />
+                    <button className="text-xs text-loss hover:underline">Delete</button>
+                  </form>
+                </div>
               </li>
             );
           })}

@@ -16,7 +16,7 @@ Teams change every session, so the site keeps a record for each **player** (the 
 
 ## Recording results
 
-Go to `/admin` (link in the footer), sign in with the admin password, and click **Record a match**. You can also add players and sets there, and delete a match that was entered wrong.
+Go to `/admin` (link in the footer), sign in with the admin password, and click **Record a match**. You can also add players and sets there, edit or delete any match (Edit is also on each match page when you are signed in).
 
 ## Deploying on Vercel
 

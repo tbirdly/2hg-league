@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Card, CardImage, PageTitle, Pips } from "@/components/ui";
+import { isAdmin } from "@/lib/auth";
 import { colorComboName, formatDate, loadLeague, pairName, sidePair, type Side } from "@/lib/league";
 
 export default async function MatchPage({ params }: PageProps<"/matches/[id]">) {
@@ -11,6 +12,7 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
   const m = data.matches.find((x) => x.id === Number(id));
   if (!m) notFound();
 
+  const admin = await isAdmin();
   const label = (side: Side) => {
     const p = sidePair(m, side);
     return p ? pairName(p) : `Side ${side}`;
@@ -18,9 +20,16 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
 
   return (
     <div className="space-y-6">
-      <PageTitle sub={[formatDate(m.playedOn), m.set?.name, m.format].filter(Boolean).join(" · ")}>
-        {label("A")} vs {label("B")}
-      </PageTitle>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageTitle sub={[formatDate(m.playedOn), m.set?.name, m.format].filter(Boolean).join(" · ")}>
+          {label("A")} vs {label("B")}
+        </PageTitle>
+        {admin && (
+          <Link href={`/admin/matches/${m.id}/edit`} className="btn-ghost">
+            Edit match
+          </Link>
+        )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {(["A", "B"] as Side[]).map((side) => (
