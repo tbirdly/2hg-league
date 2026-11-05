@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db";
 import { requireAdmin, signIn, signOut } from "@/lib/auth";
@@ -117,13 +117,24 @@ async function parseMatchForm(form: FormData, db: Db) {
   }
 
   // Everything checks out; only now create a new set if one was typed in.
-  let setId: number | null = Number(str(form, "setId")) || null;
-  const newSet = str(form, "newSet");
-  if (newSet) {
+  // The set comes from Scryfall's list (with its code) or is typed in; save it to the league's sets.
+  let setId: number | null = null;
+  let setName = str(form, "setName").slice(0, 120);
+  if (setName) {
+    // Reuse an existing set when only the capitalization differs.
+    const [same] = await db
+      .select({ name: schema.sets.name })
+      .from(schema.sets)
+      .where(sql`lower(${schema.sets.name}) = lower(${setName})`);
+    if (same) setName = same.name;
+    const code = str(form, "setCode").toUpperCase().slice(0, 8) || null;
     const [row] = await db
       .insert(schema.sets)
-      .values({ name: newSet })
-      .onConflictDoUpdate({ target: schema.sets.name, set: { name: newSet } })
+      .values({ name: setName, code })
+      .onConflictDoUpdate({
+        target: schema.sets.name,
+        set: { code: sql`coalesce(excluded.code, ${schema.sets.code})` },
+      })
       .returning();
     setId = row.id;
   }

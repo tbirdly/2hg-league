@@ -10,6 +10,7 @@ import {
   type ActionResult,
 } from "./actions";
 import { CardSearch } from "./card-search";
+import { SetPicker } from "./set-picker";
 
 function Message({ state }: { state: ActionResult }) {
   if (state?.error) return <p className="text-sm text-loss">{state.error}</p>;
@@ -218,15 +219,12 @@ export function MatchForm({
         </div>
         <div>
           <label className="mb-1 block text-xs text-muted">Set</label>
-          <select name="setId" className="field" defaultValue={initial ? (initial.setId ?? "") : sets[0]?.id}>
-            {initial && !initial.setId && <option value="">No set</option>}
-            {sets.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <input name="newSet" placeholder="…or type a new set" className="field mt-2" />
+          <SetPicker
+            leagueSets={sets.map((x) => x.name)}
+            initialName={
+              initial ? (sets.find((x) => x.id === initial.setId)?.name ?? "") : (sets[0]?.name ?? "")
+            }
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs text-muted">Format</label>
