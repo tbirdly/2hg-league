@@ -34,6 +34,25 @@ function onlyHttps(value: string, host: string): string | null {
   }
 }
 
+/** Empty means not recorded (null); anything that isn't a whole number is invalid (undefined). */
+function life(v: string): number | null | undefined {
+  if (v === "") return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n >= -999 && n <= 999 ? n : undefined;
+}
+
+function cardPick(form: FormData, prefix: "mvc" | "lvc") {
+  const name = str(form, `${prefix}CardName`).slice(0, 200) || null;
+  return {
+    name,
+    // Only keep Scryfall links and images; anything else is dropped.
+    scryfallId: name ? str(form, `${prefix}CardScryfallId`).slice(0, 64) || null : null,
+    image: name ? onlyHttps(str(form, `${prefix}CardImage`), "cards.scryfall.io") : null,
+    url: name ? onlyHttps(str(form, `${prefix}CardUrl`), "scryfall.com") : null,
+    playerId: name ? Number(str(form, `${prefix}PlayerId`)) || null : null,
+  };
+}
+
 function side(v: string): "A" | "B" | null {
   return v === "A" || v === "B" ? v : null;
 }
@@ -69,20 +88,28 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
   if (seats.some((s) => !s.playerId)) return { error: "Choose all four players." };
   if (new Set(seats.map((s) => s.playerId)).size !== 4) return { error: "Each player can only be in a match once." };
 
-  const gameRows: { gameNumber: number; winnerSide: "A" | "B"; onPlaySide: "A" | "B" | null; turns: number | null; winType: string | null }[] = [];
+  const gameRows: {
+    gameNumber: number;
+    winnerSide: "A" | "B";
+    onPlaySide: "A" | "B" | null;
+    lifeA: number | null;
+    lifeB: number | null;
+  }[] = [];
   const won = { A: 0, B: 0 };
   for (const n of [1, 2, 3]) {
     const winner = side(str(form, `g${n}_winner`));
     if (!winner) continue;
     if (won.A === 2 || won.B === 2) return { error: `Game ${n} has a winner but the match was already decided.` };
     won[winner]++;
-    const turns = Number(str(form, `g${n}_turns`));
+    const lifeA = life(str(form, `g${n}_lifeA`));
+    const lifeB = life(str(form, `g${n}_lifeB`));
+    if (lifeA === undefined || lifeB === undefined) return { error: `Game ${n}: life totals must be whole numbers.` };
     gameRows.push({
       gameNumber: n,
       winnerSide: winner,
       onPlaySide: side(str(form, `g${n}_onPlay`)),
-      turns: Number.isFinite(turns) && turns > 0 ? Math.round(turns) : null,
-      winType: str(form, `g${n}_winType`) || null,
+      lifeA,
+      lifeB,
     });
   }
   if (gameRows.length !== new Set(gameRows.map((g) => g.gameNumber)).size || won.A < 2 && won.B < 2) {
@@ -90,15 +117,13 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
   }
   if (gameRows.some((g, i) => g.gameNumber !== i + 1)) return { error: "Fill in games in order (1, 2, then 3)." };
 
-  const mvpCardName = str(form, "mvpCardName").slice(0, 200) || null;
-  const mvpPlayerId = Number(str(form, "mvpPlayerId")) || null;
-  if (mvpPlayerId && !seats.some((s) => s.playerId === mvpPlayerId)) {
-    return { error: "The MVP card's player has to be one of the four players in the match." };
+  const mvc = cardPick(form, "mvc");
+  const lvc = cardPick(form, "lvc");
+  for (const [label, pick] of [["MVC", mvc], ["LVC", lvc]] as const) {
+    if (pick.playerId && !seats.some((s) => s.playerId === pick.playerId)) {
+      return { error: `The ${label}'s player has to be one of the four players in the match.` };
+    }
   }
-  // Only keep Scryfall links/images; anything else is dropped.
-  const mvpCardImage = mvpCardName ? onlyHttps(str(form, "mvpCardImage"), "cards.scryfall.io") : null;
-  const mvpCardUrl = mvpCardName ? onlyHttps(str(form, "mvpCardUrl"), "scryfall.com") : null;
-  const mvpCardScryfallId = mvpCardName ? str(form, "mvpCardScryfallId").slice(0, 64) || null : null;
 
   const [match] = await db
     .insert(schema.matches)
@@ -107,11 +132,16 @@ export async function createMatchAction(form: FormData): Promise<ActionResult> {
       setId,
       format: str(form, "format") || null,
       notes: str(form, "notes") || null,
-      mvpCardName,
-      mvpCardScryfallId,
-      mvpCardImage,
-      mvpCardUrl,
-      mvpPlayerId: mvpCardName ? mvpPlayerId : null,
+      mvcCardName: mvc.name,
+      mvcCardScryfallId: mvc.scryfallId,
+      mvcCardImage: mvc.image,
+      mvcCardUrl: mvc.url,
+      mvcPlayerId: mvc.playerId,
+      lvcCardName: lvc.name,
+      lvcCardScryfallId: lvc.scryfallId,
+      lvcCardImage: lvc.image,
+      lvcCardUrl: lvc.url,
+      lvcPlayerId: lvc.playerId,
     })
     .returning();
   try {

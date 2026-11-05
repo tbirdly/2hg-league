@@ -14,8 +14,8 @@ type ScryfallCard = {
 
 const API = "https://api.scryfall.com";
 
-/** Card name box with Scryfall autocomplete. Submits mvpCardName plus hidden Scryfall id, image and link. */
-export function CardSearch() {
+/** Card name box with Scryfall autocomplete. Submits <prefix>CardName plus hidden Scryfall id, image and link. */
+export function CardSearch({ prefix }: { prefix: "mvc" | "lvc" }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -77,7 +77,7 @@ export function CardSearch() {
     <div className="flex gap-3">
       <div className="relative flex-1">
         <input
-          name="mvpCardName"
+          name={`${prefix}CardName`}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -90,14 +90,14 @@ export function CardSearch() {
           autoComplete="off"
           role="combobox"
           aria-expanded={open}
-          aria-controls="mvp-suggestions"
+          aria-controls={`${prefix}-suggestions`}
         />
-        <input type="hidden" name="mvpCardScryfallId" value={picked?.id ?? ""} />
-        <input type="hidden" name="mvpCardImage" value={picked?.image ?? ""} />
-        <input type="hidden" name="mvpCardUrl" value={picked?.url ?? ""} />
+        <input type="hidden" name={`${prefix}CardScryfallId`} value={picked?.id ?? ""} />
+        <input type="hidden" name={`${prefix}CardImage`} value={picked?.image ?? ""} />
+        <input type="hidden" name={`${prefix}CardUrl`} value={picked?.url ?? ""} />
         {open && suggestions.length > 0 && (
           <ul
-            id="mvp-suggestions"
+            id={`${prefix}-suggestions`}
             role="listbox"
             className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-md border border-line bg-card-2 py-1 text-sm shadow-lg"
           >

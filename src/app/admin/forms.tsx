@@ -101,6 +101,28 @@ function SideToggle({ name, required }: { name: string; required?: boolean }) {
   );
 }
 
+function CardPickFields({ prefix, title, players }: { prefix: "mvc" | "lvc"; title: string; players: Option[] }) {
+  return (
+    <fieldset className="space-y-3 rounded-xl border border-line p-4">
+      <legend className="px-1 text-sm font-semibold">
+        {title} <span className="font-normal text-muted">(optional)</span>
+      </legend>
+      <CardSearch prefix={prefix} />
+      <div>
+        <label className="mb-1 block text-xs text-muted">Played by</label>
+        <select name={`${prefix}PlayerId`} className="field" defaultValue="">
+          <option value="">–</option>
+          {players.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </fieldset>
+  );
+}
+
 export function MatchForm({ players, sets, today }: { players: Option[]; sets: Option[]; today: string }) {
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -157,8 +179,9 @@ export function MatchForm({ players, sets, today }: { players: Option[]; sets: O
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold">Games</h3>
+        <p className="text-xs text-muted">Life is each team&apos;s shared total when the game ended (2HG starts at 30).</p>
         {[1, 2, 3].map((n) => (
-          <div key={n} className="grid items-end gap-3 rounded-xl border border-line p-3 sm:grid-cols-[5rem_1fr_1fr_6rem_8rem]">
+          <div key={n} className="grid items-end gap-3 rounded-xl border border-line p-3 sm:grid-cols-[5rem_1fr_1fr_6rem_6rem]">
             <div className="text-sm font-semibold">
               Game {n}
               {n === 3 && <div className="text-xs font-normal text-muted">if needed</div>}
@@ -172,39 +195,21 @@ export function MatchForm({ players, sets, today }: { players: Option[]; sets: O
               <SideToggle name={`g${n}_onPlay`} />
             </div>
             <div>
-              <div className="mb-1 text-xs text-muted">Turns</div>
-              <input name={`g${n}_turns`} type="number" min={1} max={99} className="field" inputMode="numeric" />
+              <div className="mb-1 text-xs text-muted">Team A life</div>
+              <input name={`g${n}_lifeA`} type="number" min={-999} max={999} className="field" inputMode="numeric" />
             </div>
             <div>
-              <div className="mb-1 text-xs text-muted">Won by</div>
-              <select name={`g${n}_winType`} className="field" defaultValue="">
-                <option value="">–</option>
-                <option value="damage">Damage</option>
-                <option value="poison">Poison</option>
-                <option value="mill">Mill</option>
-                <option value="concede">Concede</option>
-                <option value="other">Other</option>
-              </select>
+              <div className="mb-1 text-xs text-muted">Team B life</div>
+              <input name={`g${n}_lifeB`} type="number" min={-999} max={999} className="field" inputMode="numeric" />
             </div>
           </div>
         ))}
       </div>
 
-      <fieldset className="space-y-3 rounded-xl border border-line p-4">
-        <legend className="px-1 text-sm font-semibold">MVP card (optional)</legend>
-        <CardSearch />
-        <div>
-          <label className="mb-1 block text-xs text-muted">Played by</label>
-          <select name="mvpPlayerId" className="field sm:w-64" defaultValue="">
-            <option value="">–</option>
-            {players.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </fieldset>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CardPickFields prefix="mvc" title="MVC: Most Valuable Card" players={players} />
+        <CardPickFields prefix="lvc" title="LVC: Least Valuable Card" players={players} />
+      </div>
 
       <div>
         <label className="mb-1 block text-xs text-muted">Notes</label>

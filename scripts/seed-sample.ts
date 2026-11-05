@@ -48,8 +48,10 @@ async function main() {
         playedOn: day.toISOString().slice(0, 10),
         setId: set.id,
         format: "draft",
-        mvpCardName: pick(["Lightning Bolt", "Llanowar Elves", "Counterspell", "Serra Angel", "Shivan Dragon"]),
-        mvpPlayerId: pick(order.slice(0, 4)).id,
+        mvcCardName: pick(["Lightning Bolt", "Llanowar Elves", "Counterspell", "Serra Angel", "Shivan Dragon"]),
+        mvcPlayerId: pick(order.slice(0, 4)).id,
+        lvcCardName: pick(["Squire", "Wood Elemental", "Mudhole", "One with Nothing"]),
+        lvcPlayerId: pick(order.slice(0, 4)).id,
       })
       .returning();
     await db.insert(matchPlayers).values(
@@ -71,8 +73,8 @@ async function main() {
         gameNumber: n++,
         winnerSide: winner,
         onPlaySide: onPlay,
-        turns: 6 + Math.floor(rand() * 8),
-        winType: pick(["damage", "damage", "damage", "poison", "concede"]),
+        lifeA: winner === "A" ? 1 + Math.floor(rand() * 25) : -Math.floor(rand() * 4),
+        lifeB: winner === "B" ? 1 + Math.floor(rand() * 25) : -Math.floor(rand() * 4),
       });
       onPlay = winner === "A" ? "B" : "A"; // loser chooses to play
     }

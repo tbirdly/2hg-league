@@ -7,12 +7,12 @@ Teams change every session, so the site keeps a record for each **player** (the 
 ## What it tracks
 
 - Every best-of-3 match: date, set, format, both teams, and the colors each player's deck used
-- Every game: who won, who was on the play, number of turns, and how it ended
+- Every game: who won, who was on the play, and each team's final life total
 - Standings: 3 points per match win, tiebreaker game win %
-- MVP card for each match (card search and images from Scryfall), plus who played it
-- Player pages: record with each teammate, win rate by color, MVP cards
+- MVC (Most Valuable Card) and LVC (Least Valuable Card) for each match, with card search and images from Scryfall, plus who played each
+- Player pages: record with each teammate, win rate by color, MVC and LVC counts
 - Teams: record for every pairing and head-to-head results
-- Stats: color and color-pair win rates, sweeps, comebacks, on-the-play win rate, game length, per-set leaders
+- Stats: color and color-pair win rates, sweeps, comebacks, on-the-play win rate, closest games by final life, top MVC and LVC cards, per-set leaders
 
 ## Recording results
 

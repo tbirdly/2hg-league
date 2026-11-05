@@ -49,23 +49,32 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
         ))}
       </div>
 
-      {m.mvp && (
-        <Card title="MVP card">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <CardImage name={m.mvp.name} image={m.mvp.image} url={m.mvp.url} />
-            <div>
-              <div className="text-xl font-bold">{m.mvp.name}</div>
-              {m.mvp.player && (
-                <div className="mt-1 text-sm text-muted">
-                  Played by{" "}
-                  <Link href={`/players/${m.mvp.player.slug}`} className="text-text hover:underline">
-                    {m.mvp.player.name}
-                  </Link>
+      {(m.mvc || m.lvc) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {([
+            ["MVC: Most Valuable Card", m.mvc],
+            ["LVC: Least Valuable Card", m.lvc],
+          ] as const).map(([title, pick]) =>
+            pick ? (
+              <Card key={title} title={title}>
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <CardImage name={pick.name} image={pick.image} url={pick.url} />
+                  <div>
+                    <div className="text-lg font-bold">{pick.name}</div>
+                    {pick.player && (
+                      <div className="text-sm text-muted">
+                        Played by{" "}
+                        <Link href={`/players/${pick.player.slug}`} className="text-text hover:underline">
+                          {pick.player.name}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </Card>
+              </Card>
+            ) : null,
+          )}
+        </div>
       )}
 
       <Card title="Games">
@@ -75,8 +84,8 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
               <th className="py-2">Game</th>
               <th className="py-2">Winner</th>
               <th className="py-2">On the play</th>
-              <th className="py-2 text-right">Turns</th>
-              <th className="py-2 text-right">How</th>
+              <th className="py-2 pl-3 text-right">{label("A")} life</th>
+              <th className="py-2 pl-3 text-right">{label("B")} life</th>
             </tr>
           </thead>
           <tbody>
@@ -85,8 +94,8 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
                 <td className="num py-2">{g.gameNumber}</td>
                 <td className="py-2">{label(g.winnerSide as Side)}</td>
                 <td className="py-2 text-muted">{g.onPlaySide ? label(g.onPlaySide as Side) : "–"}</td>
-                <td className="num py-2 text-right">{g.turns ?? "–"}</td>
-                <td className="py-2 text-right capitalize text-muted">{g.winType ?? "–"}</td>
+                <LifeCell value={g.lifeA} won={g.winnerSide === "A"} />
+                <LifeCell value={g.lifeB} won={g.winnerSide === "B"} />
               </tr>
             ))}
           </tbody>
@@ -99,5 +108,11 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
         </Card>
       )}
     </div>
+  );
+}
+
+function LifeCell({ value, won }: { value: number | null; won: boolean }) {
+  return (
+    <td className={`num py-2 pl-3 text-right font-semibold ${won ? "text-win" : "text-muted"}`}>{value ?? "–"}</td>
   );
 }

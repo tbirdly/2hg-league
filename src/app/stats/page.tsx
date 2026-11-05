@@ -1,6 +1,20 @@
 import { connection } from "next/server";
+import Link from "next/link";
 import { Card, CardImage, Empty, PageTitle, Pips, WinBar } from "@/components/ui";
-import { colorStats, fmtPct, gameStats, loadLeague, mvpCardCounts, mvpPlayerCounts, playerStandings } from "@/lib/league";
+import {
+  cardPickCounts,
+  cardPickPlayerCounts,
+  colorStats,
+  fmtPct,
+  formatDate,
+  gameStats,
+  loadLeague,
+  pairName,
+  playerStandings,
+  sidePair,
+  type CardPickKind,
+  type LeagueData,
+} from "@/lib/league";
 
 export const metadata = { title: "Stats" };
 
@@ -9,8 +23,6 @@ export default async function StatsPage() {
   const data = await loadLeague();
   const { colors, combos } = colorStats(data.matches);
   const g = gameStats(data.matches);
-  const mvpCards = mvpCardCounts(data.matches);
-  const mvpPlayers = mvpPlayerCounts(data);
 
   const tiles = [
     { label: "Matches", value: String(data.matches.length) },
@@ -18,7 +30,11 @@ export default async function StatsPage() {
     { label: "Went to game 3", value: String(g.threeGame) },
     { label: "Comebacks", value: String(g.comebacks), hint: "Lost game 1, won the match" },
     { label: "On the play wins", value: fmtPct(g.onPlayWinRate), hint: `${g.onPlayGames} games recorded` },
-    { label: "Avg game length", value: g.averageTurns ? `${g.averageTurns.toFixed(1)} turns` : "–" },
+    {
+      label: "Avg winner's life",
+      value: g.averageWinnerLife !== null ? g.averageWinnerLife.toFixed(1) : "–",
+      hint: "Life the winning team had left. Lower means closer games.",
+    },
   ];
 
   const bySet = data.sets
@@ -42,31 +58,10 @@ export default async function StatsPage() {
         ))}
       </div>
 
-      <Card title="MVP cards">
-        {mvpCards.length === 0 ? (
-          <Empty>No MVP cards picked yet.</Empty>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-              {mvpCards.slice(0, 6).map((c) => (
-                <div key={c.name} className="text-center text-xs">
-                  <CardImage name={c.name} image={c.image} url={c.url} className="w-full" />
-                  <div className="mt-1 truncate font-medium">{c.name}</div>
-                  <div className="text-muted">
-                    {c.count} MVP{c.count === 1 ? "" : "s"}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {mvpPlayers.length > 0 && (
-              <p className="mt-4 text-sm text-muted">
-                MVP cards played:{" "}
-                {mvpPlayers.map((x) => `${x.player.name} ${x.count}`).join(" · ")}
-              </p>
-            )}
-          </>
-        )}
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <CardPicks data={data} kind="mvc" title="MVC: Most Valuable Cards" />
+        <CardPicks data={data} kind="lvc" title="LVC: Least Valuable Cards" />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Win rate by color">
@@ -105,17 +100,25 @@ export default async function StatsPage() {
           )}
         </Card>
 
-        <Card title="How games end">
-          {g.winTypes.length === 0 ? (
-            <Empty>Nothing recorded yet.</Empty>
+        <Card title="Closest games">
+          {g.closest.length === 0 ? (
+            <Empty>Record final life totals to see the closest games.</Empty>
           ) : (
             <ul className="divide-y divide-line/60 text-sm">
-              {g.winTypes.map(([type, n]) => (
-                <li key={type} className="flex justify-between py-2 capitalize">
-                  <span>{type}</span>
-                  <span className="num text-muted">{n}</span>
-                </li>
-              ))}
+              {g.closest.map(({ match, game, winnerLife }) => {
+                const w = sidePair(match, game.winnerSide as "A" | "B");
+                return (
+                  <li key={game.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                    <Link href={`/matches/${match.id}`} className="hover:underline">
+                      {w ? pairName(w) : "?"} won game {game.gameNumber}
+                      <span className="text-muted"> · {formatDate(match.playedOn)}</span>
+                    </Link>
+                    <span className="num">
+                      at <span className="font-semibold text-accent">{winnerLife}</span> life
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>
@@ -141,5 +144,42 @@ export default async function StatsPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function CardPicks({ data, kind, title }: { data: LeagueData; kind: CardPickKind; title: string }) {
+  const cards = cardPickCounts(data.matches, kind);
+  const players = cardPickPlayerCounts(data, kind);
+  const label = kind.toUpperCase();
+  return (
+    <Card title={title}>
+      {cards.length === 0 ? (
+        <Empty>No {label} picked yet.</Empty>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            {cards.slice(0, 3).map((c) => (
+              <div key={c.name} className="text-center text-xs">
+                <CardImage name={c.name} image={c.image} url={c.url} className="w-full" />
+                <div className="mt-1 truncate font-medium">{c.name}</div>
+                <div className="text-muted">
+                  {c.count}× {label}
+                </div>
+              </div>
+            ))}
+          </div>
+          {cards.length > 3 && (
+            <p className="mt-3 text-xs text-muted">
+              Also: {cards.slice(3, 10).map((c) => `${c.name} (${c.count})`).join(", ")}
+            </p>
+          )}
+          {players.length > 0 && (
+            <p className="mt-3 text-sm text-muted">
+              Played by: {players.map((x) => `${x.player.name} ${x.count}`).join(" · ")}
+            </p>
+          )}
+        </>
+      )}
+    </Card>
   );
 }

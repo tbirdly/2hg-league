@@ -32,13 +32,18 @@ export const matches = pgTable("matches", {
   /** draft, sealed, constructed, other */
   format: text("format"),
   notes: text("notes"),
-  /** MVP card of the match, looked up on Scryfall. */
-  mvpCardName: text("mvp_card_name"),
-  mvpCardScryfallId: text("mvp_card_scryfall_id"),
-  mvpCardImage: text("mvp_card_image"),
-  mvpCardUrl: text("mvp_card_url"),
-  /** Who played the MVP card. */
-  mvpPlayerId: integer("mvp_player_id").references(() => players.id),
+  /** MVC (Most Valuable Card) of the match, looked up on Scryfall, and who played it. */
+  mvcCardName: text("mvc_card_name"),
+  mvcCardScryfallId: text("mvc_card_scryfall_id"),
+  mvcCardImage: text("mvc_card_image"),
+  mvcCardUrl: text("mvc_card_url"),
+  mvcPlayerId: integer("mvc_player_id").references(() => players.id),
+  /** LVC (Least Valuable Card) of the match, and who played it. */
+  lvcCardName: text("lvc_card_name"),
+  lvcCardScryfallId: text("lvc_card_scryfall_id"),
+  lvcCardImage: text("lvc_card_image"),
+  lvcCardUrl: text("lvc_card_url"),
+  lvcPlayerId: integer("lvc_player_id").references(() => players.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -74,9 +79,9 @@ export const games = pgTable(
     winnerSide: text("winner_side").notNull(),
     /** Which side went first, if recorded. */
     onPlaySide: text("on_play_side"),
-    turns: integer("turns"),
-    /** damage, poison, mill, concede, other */
-    winType: text("win_type"),
+    /** Each team's shared life total when the game ended (2HG starts at 30). */
+    lifeA: integer("life_a"),
+    lifeB: integer("life_b"),
   },
   (t) => [unique().on(t.matchId, t.gameNumber)],
 );

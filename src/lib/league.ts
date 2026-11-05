@@ -36,7 +36,7 @@ export function colorComboName(colors: string): string {
 
 export type MatchSeat = { player: Player; colors: string };
 
-export type MvpCard = {
+export type MatchCardPick = {
   name: string;
   image: string | null;
   url: string | null;
@@ -49,7 +49,10 @@ export type FullMatch = {
   set: MtgSet | null;
   format: string | null;
   notes: string | null;
-  mvp: MvpCard | null;
+  /** Most Valuable Card */
+  mvc: MatchCardPick | null;
+  /** Least Valuable Card */
+  lvc: MatchCardPick | null;
   sides: Record<Side, MatchSeat[]>;
   games: (typeof schema.games.$inferSelect)[];
   score: Record<Side, number>;
@@ -95,12 +98,20 @@ export async function loadLeague(): Promise<LeagueData> {
       set: m.setId ? (setById.get(m.setId) ?? null) : null,
       format: m.format,
       notes: m.notes,
-      mvp: m.mvpCardName
+      mvc: m.mvcCardName
         ? {
-            name: m.mvpCardName,
-            image: m.mvpCardImage,
-            url: m.mvpCardUrl,
-            player: m.mvpPlayerId ? (playerById.get(m.mvpPlayerId) ?? null) : null,
+            name: m.mvcCardName,
+            image: m.mvcCardImage,
+            url: m.mvcCardUrl,
+            player: m.mvcPlayerId ? (playerById.get(m.mvcPlayerId) ?? null) : null,
+          }
+        : null,
+      lvc: m.lvcCardName
+        ? {
+            name: m.lvcCardName,
+            image: m.lvcCardImage,
+            url: m.lvcCardUrl,
+            player: m.lvcPlayerId ? (playerById.get(m.lvcPlayerId) ?? null) : null,
           }
         : null,
       sides,
@@ -306,15 +317,21 @@ export function colorStats(matches: FullMatch[], playerId?: number) {
   };
 }
 
+/** Life left for the winning and losing team at the end of a game, if both were recorded. */
+export function lifeOf(g: FullMatch["games"][number]): { winner: number; loser: number } | null {
+  if (g.lifeA === null || g.lifeB === null) return null;
+  return g.winnerSide === "A" ? { winner: g.lifeA, loser: g.lifeB } : { winner: g.lifeB, loser: g.lifeA };
+}
+
 export function gameStats(matches: FullMatch[]) {
   let onPlayGames = 0;
   let onPlayWins = 0;
-  let turnSum = 0;
-  let turnGames = 0;
+  let lifeSum = 0;
+  let lifeGames = 0;
   let sweeps = 0;
   let threeGame = 0;
   let comebacks = 0;
-  const winTypes = new Map<string, number>();
+  const closest: { match: FullMatch; game: FullMatch["games"][number]; winnerLife: number }[] = [];
   for (const m of matches) {
     if (!m.winner) continue;
     const loser: Side = m.winner === "A" ? "B" : "A";
@@ -326,21 +343,23 @@ export function gameStats(matches: FullMatch[]) {
         onPlayGames++;
         if (g.onPlaySide === g.winnerSide) onPlayWins++;
       }
-      if (g.turns) {
-        turnSum += g.turns;
-        turnGames++;
+      const life = lifeOf(g);
+      if (life) {
+        lifeSum += life.winner;
+        lifeGames++;
+        closest.push({ match: m, game: g, winnerLife: life.winner });
       }
-      if (g.winType) winTypes.set(g.winType, (winTypes.get(g.winType) ?? 0) + 1);
     }
   }
+  closest.sort((a, b) => a.winnerLife - b.winnerLife || b.match.playedOn.localeCompare(a.match.playedOn));
   return {
     onPlayGames,
     onPlayWinRate: onPlayGames ? onPlayWins / onPlayGames : null,
-    averageTurns: turnGames ? turnSum / turnGames : null,
+    averageWinnerLife: lifeGames ? lifeSum / lifeGames : null,
     sweeps,
     threeGame,
     comebacks,
-    winTypes: [...winTypes.entries()].sort((a, b) => b[1] - a[1]),
+    closest: closest.slice(0, 5),
   };
 }
 
@@ -368,23 +387,27 @@ export function formatDate(iso: string): string {
   });
 }
 
-/** How often each card was named match MVP, most first. */
-export function mvpCardCounts(matches: FullMatch[]) {
+export type CardPickKind = "mvc" | "lvc";
+
+/** How often each card was picked as MVC or LVC, most first. */
+export function cardPickCounts(matches: FullMatch[], kind: CardPickKind) {
   const map = new Map<string, { name: string; image: string | null; url: string | null; count: number }>();
   for (const m of matches) {
-    if (!m.mvp) continue;
-    const row = map.get(m.mvp.name) ?? { name: m.mvp.name, image: m.mvp.image, url: m.mvp.url, count: 0 };
+    const pick = m[kind];
+    if (!pick) continue;
+    const row = map.get(pick.name) ?? { name: pick.name, image: pick.image, url: pick.url, count: 0 };
     row.count++;
-    row.image ??= m.mvp.image;
-    map.set(m.mvp.name, row);
+    row.image ??= pick.image;
+    row.url ??= pick.url;
+    map.set(pick.name, row);
   }
   return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
-/** Number of matches where each player played the MVP card. */
-export function mvpPlayerCounts(data: LeagueData) {
+/** Number of matches where each player played the MVC or LVC. */
+export function cardPickPlayerCounts(data: LeagueData, kind: CardPickKind) {
   return data.players
-    .map((player) => ({ player, count: data.matches.filter((m) => m.mvp?.player?.id === player.id).length }))
+    .map((player) => ({ player, count: data.matches.filter((m) => m[kind]?.player?.id === player.id).length }))
     .filter((x) => x.count > 0)
     .sort((a, b) => b.count - a.count);
 }

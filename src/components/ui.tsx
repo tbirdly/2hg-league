@@ -136,10 +136,20 @@ export function MatchCard({ m }: { m: FullMatch }) {
         <SideLine m={m} side="A" compact />
         <SideLine m={m} side="B" compact />
       </div>
-      {m.mvp && (
-        <div className="mt-2 truncate text-xs text-muted">
-          MVP: <span className="text-accent">{m.mvp.name}</span>
-          {m.mvp.player && ` (${firstName(m.mvp.player.name)})`}
+      {(m.mvc || m.lvc) && (
+        <div className="mt-2 space-y-0.5 text-xs text-muted">
+          {m.mvc && (
+            <div className="truncate">
+              MVC: <span className="text-accent">{m.mvc.name}</span>
+              {m.mvc.player && ` (${firstName(m.mvc.player.name)})`}
+            </div>
+          )}
+          {m.lvc && (
+            <div className="truncate">
+              LVC: <span className="text-loss">{m.lvc.name}</span>
+              {m.lvc.player && ` (${firstName(m.lvc.player.name)})`}
+            </div>
+          )}
         </div>
       )}
     </div>
