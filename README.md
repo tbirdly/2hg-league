@@ -12,6 +12,9 @@ Teams change every session, so the site keeps a record for each **player** (the 
 - MVC (Most Valuable Card) and LVC (Least Valuable Card) for each match, with card search and images from Scryfall, plus who played each
 - Player pages: record with each teammate, win rate by color, MVC and LVC counts
 - Teams: record for every pairing and head-to-head results
+- Ratings: Elo-style player ratings (start at 1500; team strength is the average of both players, K = 32)
+- Pairings page: suggests tonight's teams so partners rotate, with a button that pre-fills the match form
+- Rivalries on player pages: best and worst partner, nemesis, favorite opponent, record against each opponent
 - Stats: color and color-pair win rates, sweeps, comebacks, on-the-play win rate, closest games by final life, top MVC and LVC cards, per-set leaders
 
 ## Recording results

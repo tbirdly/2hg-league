@@ -177,12 +177,15 @@ export function MatchForm({
   today,
   defaultSetName,
   initial,
+  presetSeats,
 }: {
   players: Option[];
   sets: (Option & { code: string | null })[];
   today: string;
   defaultSetName: string;
   initial?: MatchInitial;
+  /** Players to pre-select on a new match (from the Pairings page). */
+  presetSeats?: MatchInitial["seats"];
 }) {
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -239,8 +242,8 @@ export function MatchForm({
         {(["a", "b"] as const).map((t) => (
           <fieldset key={t} className="space-y-4 rounded-xl border border-line p-4">
             <legend className="px-1 text-sm font-semibold">Team {t.toUpperCase()}</legend>
-            <Seat prefix={`${t}1`} label="Player 1 and deck colors" players={players} initial={initial?.seats[`${t}1`]} />
-            <Seat prefix={`${t}2`} label="Player 2 and deck colors" players={players} initial={initial?.seats[`${t}2`]} />
+            <Seat prefix={`${t}1`} label="Player 1 and deck colors" players={players} initial={(initial?.seats ?? presetSeats)?.[`${t}1`]} />
+            <Seat prefix={`${t}2`} label="Player 2 and deck colors" players={players} initial={(initial?.seats ?? presetSeats)?.[`${t}2`]} />
           </fieldset>
         ))}
       </div>

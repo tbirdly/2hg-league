@@ -411,3 +411,141 @@ export function cardPickPlayerCounts(data: LeagueData, kind: CardPickKind) {
     .filter((x) => x.count > 0)
     .sort((a, b) => b.count - a.count);
 }
+
+/* ---------- Ratings ---------- */
+
+export const START_RATING = 1500;
+const K_FACTOR = 32;
+
+export type RatingPoint = { matchId: number; playedOn: string; rating: number; change: number };
+export type PlayerRating = { player: Player; rating: number; peak: number; history: RatingPoint[] };
+
+function chronological(matches: FullMatch[]) {
+  return [...matches].sort((a, b) => a.playedOn.localeCompare(b.playedOn) || a.id - b.id);
+}
+
+/**
+ * Elo-style ratings for players. A team's strength is the average of its two players' ratings, so
+ * beating a stronger pair earns more, and both teammates gain or lose the same amount.
+ */
+export function playerRatings(data: LeagueData): PlayerRating[] {
+  const state = new Map<number, PlayerRating>(
+    data.players.map((player) => [player.id, { player, rating: START_RATING, peak: START_RATING, history: [] }]),
+  );
+  for (const m of chronological(data.matches)) {
+    if (!m.winner || m.sides.A.length === 0 || m.sides.B.length === 0) continue;
+    const team = (side: Side) => m.sides[side].map((s) => state.get(s.player.id)).filter((x): x is PlayerRating => !!x);
+    const a = team("A");
+    const b = team("B");
+    const avg = (xs: PlayerRating[]) => xs.reduce((sum, x) => sum + x.rating, 0) / xs.length;
+    const expectedA = 1 / (1 + 10 ** ((avg(b) - avg(a)) / 400));
+    const change = K_FACTOR * ((m.winner === "A" ? 1 : 0) - expectedA);
+    for (const [members, delta] of [
+      [a, change],
+      [b, -change],
+    ] as const) {
+      for (const p of members) {
+        p.rating += delta;
+        p.peak = Math.max(p.peak, p.rating);
+        p.history.push({ matchId: m.id, playedOn: m.playedOn, rating: p.rating, change: delta });
+      }
+    }
+  }
+  return [...state.values()].sort((x, y) => y.rating - x.rating);
+}
+
+/* ---------- Rivalries ---------- */
+
+export type HeadToHeadPlayer = { other: Player; wins: number; losses: number };
+
+/** A player's match record against each opponent they've faced. */
+export function opponentRecords(data: LeagueData, playerId: number): HeadToHeadPlayer[] {
+  const map = new Map<number, HeadToHeadPlayer>();
+  for (const m of data.matches) {
+    const side = sideOfPlayer(m, playerId);
+    if (!side || !m.winner) continue;
+    const other: Side = side === "A" ? "B" : "A";
+    for (const seat of m.sides[other]) {
+      const row = map.get(seat.player.id) ?? { other: seat.player, wins: 0, losses: 0 };
+      if (m.winner === side) row.wins++;
+      else row.losses++;
+      map.set(seat.player.id, row);
+    }
+  }
+  return [...map.values()];
+}
+
+/** Best/worst partner by win %, nemesis (worst record against) and favorite opponent (best record against). */
+export function rivalries(data: LeagueData, playerId: number) {
+  const partners = partnerRecords(data, playerId).map((x) => ({
+    other: x.partner,
+    wins: x.record.matchWins,
+    losses: x.record.matchLosses,
+  }));
+  const opponents = opponentRecords(data, playerId);
+  const rate = (x: { wins: number; losses: number }) => x.wins / (x.wins + x.losses);
+  const best = (xs: HeadToHeadPlayer[]) =>
+    [...xs].sort((a, b) => rate(b) - rate(a) || b.wins + b.losses - (a.wins + a.losses))[0] ?? null;
+  const worst = (xs: HeadToHeadPlayer[]) =>
+    [...xs].sort((a, b) => rate(a) - rate(b) || b.wins + b.losses - (a.wins + a.losses))[0] ?? null;
+  return {
+    partners,
+    opponents,
+    bestPartner: best(partners),
+    worstPartner: partners.length > 1 ? worst(partners) : null,
+    nemesis: worst(opponents.filter((o) => o.losses > 0)),
+    favoriteOpponent: best(opponents.filter((o) => o.wins > 0)),
+  };
+}
+
+/* ---------- Pairings ---------- */
+
+export type PairingOption = {
+  teamA: [Player, Player];
+  teamB: [Player, Player];
+  /** How many times each of the two teams has played together before. */
+  timesTogether: number;
+  /** Most recent date either of these teams played together, or null. */
+  lastTogether: string | null;
+  /** Ratings-based chance that team A wins (0..1). */
+  teamAWinChance: number;
+};
+
+/**
+ * All three ways to split four players into two teams, best first: the split whose partnerships have
+ * happened least often (then least recently, then most evenly matched) comes first.
+ */
+export function pairingOptions(data: LeagueData, four: Player[]): PairingOption[] {
+  if (four.length !== 4) return [];
+  const ratings = new Map(playerRatings(data).map((r) => [r.player.id, r.rating]));
+  const together = (x: Player, y: Player) => {
+    const key = pairKey([x.id, y.id]);
+    const ms = data.matches.filter((m) => sidePair(m, "A")?.key === key || sidePair(m, "B")?.key === key);
+    return { count: ms.length, last: ms.map((m) => m.playedOn).sort().at(-1) ?? null };
+  };
+  const [p0, p1, p2, p3] = four;
+  const splits: [[Player, Player], [Player, Player]][] = [
+    [[p0, p1], [p2, p3]],
+    [[p0, p2], [p1, p3]],
+    [[p0, p3], [p1, p2]],
+  ];
+  return splits
+    .map(([teamA, teamB]) => {
+      const ta = together(...teamA);
+      const tb = together(...teamB);
+      const avg = (t: Player[]) => t.reduce((s, p) => s + (ratings.get(p.id) ?? START_RATING), 0) / t.length;
+      return {
+        teamA,
+        teamB,
+        timesTogether: ta.count + tb.count,
+        lastTogether: [ta.last, tb.last].filter((x): x is string => !!x).sort().at(-1) ?? null,
+        teamAWinChance: 1 / (1 + 10 ** ((avg(teamB) - avg(teamA)) / 400)),
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.timesTogether - b.timesTogether ||
+        (a.lastTogether ?? "").localeCompare(b.lastTogether ?? "") ||
+        Math.abs(a.teamAWinChance - 0.5) - Math.abs(b.teamAWinChance - 0.5),
+    );
+}

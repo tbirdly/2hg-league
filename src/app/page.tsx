@@ -2,12 +2,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Card, Empty, MatchCard, PageTitle, RecordCells, RecordHead } from "@/components/ui";
 import { LEAGUE_NAME } from "@/lib/config";
-import { loadLeague, pairName, playerStandings, teamStandings } from "@/lib/league";
+import { loadLeague, pairName, playerRatings, playerStandings, teamStandings } from "@/lib/league";
 
 export default async function Home() {
   await connection();
   const data = await loadLeague();
   const players = playerStandings(data);
+  const ratings = new Map(playerRatings(data).map((r) => [r.player.id, r.rating]));
   const teams = teamStandings(data);
   const recent = data.matches.slice(0, 6);
 
@@ -20,7 +21,7 @@ export default async function Home() {
       <Card title="Players">
         <div className="-mx-2 overflow-x-auto">
           <table className="w-full text-sm">
-            <RecordHead first="Player" />
+            <RecordHead first="Player" rating />
             <tbody>
               {players.map((s, i) => (
                 <tr key={s.player.id} className="border-b border-line/60 last:border-0">
@@ -30,7 +31,7 @@ export default async function Home() {
                       {s.player.name}
                     </Link>
                   </td>
-                  <RecordCells r={s.record} />
+                  <RecordCells r={s.record} rating={ratings.get(s.player.id)} />
                 </tr>
               ))}
             </tbody>

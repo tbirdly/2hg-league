@@ -69,10 +69,15 @@ export function Streak({ value }: { value: string }) {
   return <span className={value.startsWith("W") ? "text-win" : "text-loss"}>{value}</span>;
 }
 
-export function RecordCells({ r }: { r: Record_ }) {
+export function RecordCells({ r, rating }: { r: Record_; rating?: number }) {
   return (
     <>
-      <td className="num px-2 py-2 text-right">{r.matchesPlayed}</td>
+      {rating !== undefined && (
+        <td className="num px-2 py-2 text-right text-muted" title="Rating">
+          {Math.round(rating)}
+        </td>
+      )}
+      <td className="num hidden px-2 py-2 text-right sm:table-cell">{r.matchesPlayed}</td>
       <td className="num px-2 py-2 text-right">
         {r.matchWins}-{r.matchLosses}
       </td>
@@ -88,13 +93,18 @@ export function RecordCells({ r }: { r: Record_ }) {
   );
 }
 
-export function RecordHead({ first }: { first: string }) {
+export function RecordHead({ first, rating }: { first: string; rating?: boolean }) {
   return (
     <thead>
       <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
         <th className="w-8 px-2 py-2">#</th>
         <th className="px-2 py-2">{first}</th>
-        <th className="px-2 py-2 text-right" title="Matches played">MP</th>
+        {rating && (
+          <th className="px-2 py-2 text-right" title="Elo-style rating, starts at 1500">
+            Rating
+          </th>
+        )}
+        <th className="hidden px-2 py-2 text-right sm:table-cell" title="Matches played">MP</th>
         <th className="px-2 py-2 text-right" title="Match wins-losses">W-L</th>
         <th className="hidden px-2 py-2 text-right sm:table-cell" title="Game wins-losses">Games</th>
         <th className="hidden px-2 py-2 text-right sm:table-cell" title="Game win %">GW%</th>
@@ -171,6 +181,27 @@ export function CardImage({ name, image, url, className = "w-56" }: { name: stri
     </a>
   ) : (
     inner
+  );
+}
+
+/** Small line chart of a series of numbers (e.g. a rating over time). */
+export function Sparkline({ values, base }: { values: number[]; base?: number }) {
+  if (values.length < 2) return null;
+  const w = 600;
+  const h = 120;
+  const min = Math.min(...values, base ?? Infinity);
+  const max = Math.max(...values, base ?? -Infinity);
+  const span = max - min || 1;
+  const x = (i: number) => (i / (values.length - 1)) * w;
+  const y = (v: number) => h - 8 - ((v - min) / span) * (h - 16);
+  const d = values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-28 w-full" preserveAspectRatio="none" role="img" aria-label="Rating over time">
+      {base !== undefined && (
+        <line x1={0} x2={w} y1={y(base)} y2={y(base)} stroke="var(--line)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+      )}
+      <path d={d} fill="none" stroke="var(--accent)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+    </svg>
   );
 }
 

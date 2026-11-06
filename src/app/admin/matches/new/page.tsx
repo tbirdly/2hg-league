@@ -7,10 +7,20 @@ import { MatchForm } from "../../forms";
 
 export const metadata = { title: "Record a match" };
 
-export default async function NewMatchPage() {
+export default async function NewMatchPage({ searchParams }: PageProps<"/admin/matches/new">) {
   await connection();
   if (!(await isAdmin())) redirect("/admin");
   const data = await loadLeague();
+  // Teams can be pre-filled from the Pairings page: ?a=1,2&b=3,4
+  const { a, b } = await searchParams;
+  const ids = (v: unknown) =>
+    (typeof v === "string" ? v.split(",") : [])
+      .map(Number)
+      .filter((id) => data.players.some((p) => p.id === id));
+  const [a1, a2] = ids(a);
+  const [b1, b2] = ids(b);
+  const seat = (playerId?: number) => (playerId ? { playerId, colors: "" } : undefined);
+  const presetSeats = { a1: seat(a1), a2: seat(a2), b1: seat(b1), b2: seat(b2) };
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
   return (
     <div>
@@ -21,6 +31,7 @@ export default async function NewMatchPage() {
           sets={data.sets.map((s) => ({ id: s.id, name: s.name, code: s.code }))}
           defaultSetName={data.matches.find((m) => m.set?.code)?.set?.name ?? ""}
           today={today}
+          presetSeats={presetSeats}
         />
       </Card>
     </div>
