@@ -66,7 +66,7 @@ export type MatchInitial = {
   format: string | null;
   notes: string | null;
   seats: Record<"a1" | "a2" | "b1" | "b2", { playerId: number; colors: string } | undefined>;
-  games: { winnerSide: string; onPlaySide: string | null; lifeA: number | null; lifeB: number | null }[];
+  games: { winnerSide: string; lifeA: number | null; lifeB: number | null }[];
   mvc: CardPickInitial | null;
   lvc: CardPickInitial | null;
 };
@@ -252,7 +252,7 @@ export function MatchForm({
         <h3 className="text-sm font-semibold">Games</h3>
         <p className="text-xs text-muted">Life is each team&apos;s shared total when the game ended (2HG starts at 30).</p>
         {[1, 2, 3].map((n) => (
-          <div key={n} className="grid items-end gap-3 rounded-xl border border-line p-3 sm:grid-cols-[5rem_1fr_1fr_6rem_6rem]">
+          <div key={n} className="grid items-end gap-3 rounded-xl border border-line p-3 sm:grid-cols-[5rem_1fr_7rem_7rem]">
             <div className="text-sm font-semibold">
               Game {n}
               {n === 3 && (
@@ -267,10 +267,6 @@ export function MatchForm({
             <div>
               <div className="mb-1 text-xs text-muted">Winner</div>
               <SideToggle name={`g${n}_winner`} required={n < 3} initial={initial?.games[n - 1]?.winnerSide} />
-            </div>
-            <div>
-              <div className="mb-1 text-xs text-muted">On the play</div>
-              <SideToggle name={`g${n}_onPlay`} initial={initial?.games[n - 1]?.onPlaySide} />
             </div>
             <div>
               <div className="mb-1 text-xs text-muted">Team A life</div>

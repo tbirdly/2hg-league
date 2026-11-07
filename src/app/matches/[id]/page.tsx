@@ -92,7 +92,6 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
               <th className="py-2">Game</th>
               <th className="py-2">Winner</th>
-              <th className="py-2">On the play</th>
               <th className="py-2 pl-3 text-right">{label("A")} life</th>
               <th className="py-2 pl-3 text-right">{label("B")} life</th>
             </tr>
@@ -102,7 +101,6 @@ export default async function MatchPage({ params }: PageProps<"/matches/[id]">) 
               <tr key={g.id} className="border-b border-line/60 last:border-0">
                 <td className="num py-2">{g.gameNumber}</td>
                 <td className="py-2">{label(g.winnerSide as Side)}</td>
-                <td className="py-2 text-muted">{g.onPlaySide ? label(g.onPlaySide as Side) : "–"}</td>
                 <LifeCell value={g.lifeA} won={g.winnerSide === "A"} />
                 <LifeCell value={g.lifeB} won={g.winnerSide === "B"} />
               </tr>

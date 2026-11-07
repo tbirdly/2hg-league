@@ -77,7 +77,7 @@ export const games = pgTable(
     gameNumber: integer("game_number").notNull(),
     /** "A" or "B" */
     winnerSide: text("winner_side").notNull(),
-    /** Which side went first, if recorded. */
+    /** Which side went first. No longer recorded or shown (removed from the form 2026-11-07); kept for old data. */
     onPlaySide: text("on_play_side"),
     /** Each team's shared life total when the game ended (2HG starts at 30). */
     lifeA: integer("life_a"),

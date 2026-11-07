@@ -68,7 +68,6 @@ async function main() {
     );
     const won = { A: 0, B: 0 };
     let n = 1;
-    let onPlay: "A" | "B" = rand() < 0.5 ? "A" : "B";
     while (won.A < 2 && won.B < 2) {
       const winner: "A" | "B" = rand() < (order[0].id % 2 ? 0.6 : 0.45) ? "A" : "B";
       won[winner]++;
@@ -76,11 +75,9 @@ async function main() {
         matchId: m.id,
         gameNumber: n++,
         winnerSide: winner,
-        onPlaySide: onPlay,
         lifeA: winner === "A" ? 1 + Math.floor(rand() * 25) : -Math.floor(rand() * 4),
         lifeB: winner === "B" ? 1 + Math.floor(rand() * 25) : -Math.floor(rand() * 4),
       });
-      onPlay = winner === "A" ? "B" : "A"; // loser chooses to play
     }
   }
   console.log("Sample data loaded into ./.pglite");

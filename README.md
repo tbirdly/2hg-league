@@ -7,7 +7,7 @@ Teams change every session, so the site keeps a record for each **player** (the 
 ## What it tracks
 
 - Every best-of-3 match: date, set, format, both teams, and the colors each player's deck used
-- Every game: who won, who was on the play, and each team's final life total
+- Every game: who won and each team's final life total
 - Standings: 3 points per match win, tiebreaker game win %
 - MVC (Most Valuable Card) and LVC (Least Valuable Card) for each match, with card search and images from Scryfall, plus who played each
 - Player pages: record with each teammate, win rate by color, MVC and LVC counts

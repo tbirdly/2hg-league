@@ -37,7 +37,7 @@ export default async function EditMatchPage({ params }: PageProps<"/admin/matche
     format: match.format,
     notes: match.notes,
     seats: { a1: seat(sideA[0]), a2: seat(sideA[1]), b1: seat(sideB[0]), b2: seat(sideB[1]) },
-    games: games.map((g) => ({ winnerSide: g.winnerSide, onPlaySide: g.onPlaySide, lifeA: g.lifeA, lifeB: g.lifeB })),
+    games: games.map((g) => ({ winnerSide: g.winnerSide, lifeA: g.lifeA, lifeB: g.lifeB })),
     mvc: pick(match.mvcCardName, match.mvcCardScryfallId, match.mvcCardImage, match.mvcCardUrl, match.mvcPlayerId),
     lvc: pick(match.lvcCardName, match.lvcCardScryfallId, match.lvcCardImage, match.lvcCardUrl, match.lvcPlayerId),
   };

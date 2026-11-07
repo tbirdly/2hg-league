@@ -82,7 +82,6 @@ async function parseMatchForm(form: FormData, db: Db) {
   const gameRows: {
     gameNumber: number;
     winnerSide: "A" | "B";
-    onPlaySide: "A" | "B" | null;
     lifeA: number | null;
     lifeB: number | null;
   }[] = [];
@@ -99,7 +98,7 @@ async function parseMatchForm(form: FormData, db: Db) {
     if (lifeA === undefined || lifeB === undefined) {
       return { error: `Game ${n}: life totals must be whole numbers.` } as const;
     }
-    gameRows.push({ gameNumber: n, winnerSide: winner, onPlaySide: side(str(form, `g${n}_onPlay`)), lifeA, lifeB });
+    gameRows.push({ gameNumber: n, winnerSide: winner, lifeA, lifeB });
   }
   if (won.A < 2 && won.B < 2) {
     return { error: "A match ends when a team wins 2 games. Fill in each game's winner." } as const;
