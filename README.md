@@ -15,7 +15,7 @@ Teams change every session, so the site keeps a record for each **player** (the 
 - Ratings: Elo-style player ratings (start at 1500; team strength is the average of both players, K = 32)
 - Pairings page: suggests tonight's teams so partners rotate, with a button that pre-fills the match form
 - Rivalries on player pages: best and worst partner, nemesis, favorite opponent, record against each opponent
-- Stats: color and color-pair win rates, sweeps, comebacks, on-the-play win rate, closest games by final life, top MVC and LVC cards, per-set leaders
+- Stats: color and color-pair win rates, sweeps, closest games by final life, top MVC and LVC cards, per-set leaders
 
 ## Recording results
 

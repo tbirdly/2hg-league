@@ -324,43 +324,21 @@ export function lifeOf(g: FullMatch["games"][number]): { winner: number; loser: 
 }
 
 export function gameStats(matches: FullMatch[]) {
-  let onPlayGames = 0;
-  let onPlayWins = 0;
-  let lifeSum = 0;
-  let lifeGames = 0;
   let sweeps = 0;
   let threeGame = 0;
-  let comebacks = 0;
   const closest: { match: FullMatch; game: FullMatch["games"][number]; winnerLife: number }[] = [];
   for (const m of matches) {
     if (!m.winner) continue;
     const loser: Side = m.winner === "A" ? "B" : "A";
     if (m.score[loser] === 0) sweeps++;
     else threeGame++;
-    if (m.games[0]?.winnerSide === loser) comebacks++;
     for (const g of m.games) {
-      if (g.onPlaySide) {
-        onPlayGames++;
-        if (g.onPlaySide === g.winnerSide) onPlayWins++;
-      }
       const life = lifeOf(g);
-      if (life) {
-        lifeSum += life.winner;
-        lifeGames++;
-        closest.push({ match: m, game: g, winnerLife: life.winner });
-      }
+      if (life) closest.push({ match: m, game: g, winnerLife: life.winner });
     }
   }
   closest.sort((a, b) => a.winnerLife - b.winnerLife || b.match.playedOn.localeCompare(a.match.playedOn));
-  return {
-    onPlayGames,
-    onPlayWinRate: onPlayGames ? onPlayWins / onPlayGames : null,
-    averageWinnerLife: lifeGames ? lifeSum / lifeGames : null,
-    sweeps,
-    threeGame,
-    comebacks,
-    closest: closest.slice(0, 5),
-  };
+  return { sweeps, threeGame, closest: closest.slice(0, 5) };
 }
 
 /** Records of a player broken down by teammate. */

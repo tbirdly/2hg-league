@@ -5,7 +5,6 @@ import {
   cardPickCounts,
   cardPickPlayerCounts,
   colorStats,
-  fmtPct,
   formatDate,
   gameStats,
   loadLeague,
@@ -28,13 +27,6 @@ export default async function StatsPage() {
     { label: "Matches", value: String(data.matches.length) },
     { label: "Sweeps (2-0)", value: String(g.sweeps) },
     { label: "Went to game 3", value: String(g.threeGame) },
-    { label: "Comebacks", value: String(g.comebacks), hint: "Lost game 1, won the match" },
-    { label: "On the play wins", value: fmtPct(g.onPlayWinRate), hint: `${g.onPlayGames} games recorded` },
-    {
-      label: "Avg winner's life",
-      value: g.averageWinnerLife !== null ? g.averageWinnerLife.toFixed(1) : "–",
-      hint: "Life the winning team had left. Lower means closer games.",
-    },
   ];
 
   const bySet = data.sets
@@ -49,9 +41,9 @@ export default async function StatsPage() {
     <div className="space-y-6">
       <PageTitle>Stats</PageTitle>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3">
         {tiles.map((t) => (
-          <div key={t.label} className="rounded-xl border border-line bg-card p-3" title={t.hint}>
+          <div key={t.label} className="rounded-xl border border-line bg-card p-3">
             <div className="text-xs text-muted">{t.label}</div>
             <div className="num mt-1 text-xl font-bold">{t.value}</div>
           </div>
