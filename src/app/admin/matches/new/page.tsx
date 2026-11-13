@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Card, PageTitle } from "@/components/ui";
 import { isAdmin } from "@/lib/auth";
+import { leagueToday } from "@/lib/config";
 import { loadLeague } from "@/lib/league";
 import { MatchForm } from "../../forms";
 
@@ -21,7 +22,7 @@ export default async function NewMatchPage({ searchParams }: PageProps<"/admin/m
   const [b1, b2] = ids(b);
   const seat = (playerId?: number) => (playerId ? { playerId, colors: "" } : undefined);
   const presetSeats = { a1: seat(a1), a2: seat(a2), b1: seat(b1), b2: seat(b2) };
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  const today = leagueToday();
   return (
     <div>
       <PageTitle sub="Pick the four players, the colors each played, and who won each game.">Record a match</PageTitle>

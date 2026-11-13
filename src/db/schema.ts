@@ -88,3 +88,32 @@ export const games = pgTable(
 
 export type Player = typeof players.$inferSelect;
 export type MtgSet = typeof sets.$inferSelect;
+
+/** A "Who's playing today?" call. At most one per day (in the league's time zone). */
+export const playCalls = pgTable("play_calls", {
+  id: serial("id").primaryKey(),
+  /** The league-local date the call is for. */
+  forDate: date("for_date").notNull().unique(),
+  startedBy: integer("started_by").references(() => players.id),
+  /** Set once the "Game on" message has been posted, so it only goes out once. */
+  gameOnAt: timestamp("game_on_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Each player's answer to a call. */
+export const playCallAnswers = pgTable(
+  "play_call_answers",
+  {
+    id: serial("id").primaryKey(),
+    callId: integer("call_id")
+      .notNull()
+      .references(() => playCalls.id, { onDelete: "cascade" }),
+    playerId: integer("player_id")
+      .notNull()
+      .references(() => players.id),
+    /** "in" or "out" */
+    answer: text("answer").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.callId, t.playerId)],
+);
