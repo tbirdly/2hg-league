@@ -12,7 +12,13 @@ import { firstName, loadLeague, pairingOptions } from "@/lib/league";
 const PING_COOLDOWN_MS = 3 * 60 * 60 * 1000;
 
 
+/**
+ * The public address to put in Discord links. Uses the production domain, never the address of
+ * whatever deployment the person happened to open (Vercel asks for a login on those).
+ */
 async function siteUrl() {
+  const fixed = process.env.SITE_URL ?? process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (fixed) return (fixed.startsWith("http") ? fixed : `https://${fixed}`).replace(/\/$/, "");
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";
