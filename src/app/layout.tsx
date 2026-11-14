@@ -19,7 +19,7 @@ const NAV = [
   { href: "/matches", label: "Matches" },
   { href: "/teams", label: "Teams" },
   { href: "/pairings", label: "Pairings" },
-  { href: "/play", label: "Play today?" },
+  { href: "/schedule", label: "Schedule" },
   { href: "/stats", label: "Stats" },
 ];
 

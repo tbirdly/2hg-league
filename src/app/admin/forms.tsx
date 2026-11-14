@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import {
   addPlayerAction,
+  saveDiscordIdsAction,
   createMatchAction,
   loginAction,
   updateMatchAction,
@@ -41,6 +42,35 @@ export function AddPlayerForm() {
         </button>
       </div>
       <Message state={state} />
+    </form>
+  );
+}
+
+export function DiscordIdsForm({ players }: { players: { id: number; name: string; discordUserId: string | null }[] }) {
+  const [state, action, pending] = useActionState(saveDiscordIdsAction, undefined);
+  // Controlled so what was typed stays put after saving (React resets uncontrolled forms after an action).
+  const [values, setValues] = useState<Record<number, string>>(() =>
+    Object.fromEntries(players.map((p) => [p.id, p.discordUserId ?? ""])),
+  );
+  return (
+    <form action={action} className="space-y-3">
+      {players.map((p) => (
+        <label key={p.id} className="flex items-center gap-3 text-sm">
+          <span className="w-32 shrink-0 truncate">{p.name}</span>
+          <input
+            name={`discord_${p.id}`}
+            value={values[p.id] ?? ""}
+            onChange={(e) => setValues((v) => ({ ...v, [p.id]: e.target.value }))}
+            placeholder="e.g. 123456789012345678"
+            inputMode="numeric"
+            className="field"
+          />
+        </label>
+      ))}
+      <Message state={state} />
+      <button className="btn" disabled={pending}>
+        Save Discord IDs
+      </button>
     </form>
   );
 }

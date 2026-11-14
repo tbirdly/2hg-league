@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db";
 import { requireAdmin, signIn, signOut } from "@/lib/auth";
+import { DISCORD_ID } from "@/lib/discord";
 import { COLOR_ORDER } from "@/lib/league";
 import { slugify } from "@/lib/slug";
 
@@ -212,4 +213,29 @@ export async function addPlayerAction(_prev: ActionResult, form: FormData): Prom
     .onConflictDoNothing()
     .returning();
   return rows.length ? { ok: `Added ${name}.` } : { error: `${name} is already in the league.` };
+}
+
+/** Saves each player's Discord user ID (used to tag them in Discord). Blank clears it. */
+export async function saveDiscordIdsAction(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const db = await getDb();
+  const players = await db.select().from(schema.players);
+  // Check every ID first so a typo doesn't save half the form.
+  const updates: { id: number; value: string | null }[] = [];
+  const bad: string[] = [];
+  for (const p of players) {
+    const raw = form.get(`discord_${p.id}`);
+    if (typeof raw !== "string") continue;
+    const id = raw.trim().replace(/^<@!?|>$/g, "");
+    if (id && !DISCORD_ID.test(id)) bad.push(p.name);
+    else updates.push({ id: p.id, value: id || null });
+  }
+  if (!bad.length) {
+    for (const u of updates) {
+      await db.update(schema.players).set({ discordUserId: u.value }).where(eq(schema.players.id, u.id));
+    }
+  }
+  return bad.length
+    ? { error: `Not a Discord user ID for ${bad.join(", ")}. It should be a long number. Nothing was saved.` }
+    : { ok: "Saved Discord IDs." };
 }

@@ -13,6 +13,8 @@ export const players = pgTable("players", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
+  /** Discord user ID (a long number), used to tag the player in Discord messages. */
+  discordUserId: text("discord_user_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -89,31 +91,46 @@ export const games = pgTable(
 export type Player = typeof players.$inferSelect;
 export type MtgSet = typeof sets.$inferSelect;
 
-/** A "Who's playing today?" call. At most one per day (in the league's time zone). */
-export const playCalls = pgTable("play_calls", {
+/** A week on the schedule (weeks start on Monday). Created when someone asks for availability. */
+export const scheduleWeeks = pgTable("schedule_weeks", {
   id: serial("id").primaryKey(),
-  /** The league-local date the call is for. */
-  forDate: date("for_date").notNull().unique(),
-  startedBy: integer("started_by").references(() => players.id),
-  /** Set once the "Game on" message has been posted, so it only goes out once. */
-  gameOnAt: timestamp("game_on_at"),
+  weekStart: date("week_start").notNull().unique(),
+  askedBy: integer("asked_by").references(() => players.id),
+  /** Last time Discord was pinged for this week (the ask or a reminder), to prevent spamming. */
+  lastPingAt: timestamp("last_ping_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/** Each player's answer to a call. */
-export const playCallAnswers = pgTable(
-  "play_call_answers",
+/** One row per day a player can play. */
+export const availability = pgTable(
+  "availability",
   {
     id: serial("id").primaryKey(),
-    callId: integer("call_id")
-      .notNull()
-      .references(() => playCalls.id, { onDelete: "cascade" }),
     playerId: integer("player_id")
       .notNull()
       .references(() => players.id),
-    /** "in" or "out" */
-    answer: text("answer").notNull(),
+    day: date("day").notNull(),
+  },
+  (t) => [unique().on(t.playerId, t.day)],
+);
+
+/** Marks that a player has filled in a week, so "no days work" differs from "hasn't answered". */
+export const scheduleResponses = pgTable(
+  "schedule_responses",
+  {
+    id: serial("id").primaryKey(),
+    weekStart: date("week_start").notNull(),
+    playerId: integer("player_id")
+      .notNull()
+      .references(() => players.id),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (t) => [unique().on(t.callId, t.playerId)],
+  (t) => [unique().on(t.weekStart, t.playerId)],
 );
+
+/** Days that were announced in Discord as working for everyone, so each is only announced once. */
+export const gameOnDays = pgTable("game_on_days", {
+  id: serial("id").primaryKey(),
+  day: date("day").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

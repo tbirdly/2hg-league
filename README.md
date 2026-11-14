@@ -15,7 +15,7 @@ Teams change every session, so the site keeps a record for each **player** (the 
 - Ratings: Elo-style player ratings (start at 1500; team strength is the average of both players, K = 32)
 - Pairings page: suggests tonight's teams so partners rotate, with a button that pre-fills the match form
 - Rivalries on player pages: best and worst partner, nemesis, favorite opponent, record against each opponent
-- Play today?: anyone presses a button to ask the group in Discord; everyone taps In or Can't tonight, and a "Game on" message with suggested teams posts when four are in
+- Schedule: each player ticks the days they can play this week or the next few; Discord tags people to fill it in and announces any day that works for all four
 - Stats: color and color-pair win rates, sweeps, closest games by final life, top MVC and LVC cards, per-set leaders
 
 ## Recording results
@@ -29,7 +29,7 @@ Go to `/admin` (link in the footer), sign in with the admin password, and click 
 3. In **Settings → Environment Variables**, add `ADMIN_PASSWORD` with the password you want for the admin page.
 4. Redeploy (Deployments → ⋯ → Redeploy). Each deploy creates or updates the database tables and adds the starting players automatically.
 
-5. Optional, for Discord alerts: in Discord open your channel's **Edit Channel → Integrations → Webhooks → New Webhook**, copy its URL, add it in Vercel as `DISCORD_WEBHOOK_URL`, and redeploy.
+5. Optional, for Discord alerts: in Discord open your channel's **Edit Channel → Integrations → Webhooks → New Webhook**, copy its URL, add it in Vercel as `DISCORD_WEBHOOK_URL`, and redeploy. To tag people, add each player's Discord user ID on the Admin page (Discord: Settings → Advanced → Developer Mode, then right-click a person → Copy User ID).
 
 Every push to `main` deploys again on its own.
 

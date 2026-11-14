@@ -29,6 +29,13 @@
       "when": 1794536351003,
       "tag": "0003_play_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794668034908,
+      "tag": "0004_weekly_schedule",
+      "breakpoints": true
     }
   ]
 }

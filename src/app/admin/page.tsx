@@ -4,7 +4,7 @@ import { Card, PageTitle } from "@/components/ui";
 import { adminConfigured, isAdmin } from "@/lib/auth";
 import { formatDate, loadLeague, pairName, sidePair } from "@/lib/league";
 import { deleteMatchAction, logoutAction } from "./actions";
-import { AddPlayerForm, LoginForm } from "./forms";
+import { AddPlayerForm, DiscordIdsForm, LoginForm } from "./forms";
 
 export const metadata = { title: "Admin" };
 
@@ -55,6 +55,16 @@ export default async function AdminPage() {
           <p className="mt-2 text-xs text-muted">Sets come from Scryfall. Pick one when you record a match.</p>
         </Card>
       </div>
+
+      <Card title="Discord tags">
+        <p className="mb-3 text-xs text-muted">
+          To tag people in Discord, paste each person&apos;s Discord user ID. In Discord, turn on Settings → Advanced →
+          Developer Mode, then right-click (or long-press) the person and choose Copy User ID.
+        </p>
+        <DiscordIdsForm
+          players={data.players.map((p) => ({ id: p.id, name: p.name, discordUserId: p.discordUserId }))}
+        />
+      </Card>
 
       <Card title="Matches">
         <ul className="divide-y divide-line/60 text-sm">
