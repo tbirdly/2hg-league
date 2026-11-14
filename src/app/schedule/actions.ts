@@ -4,6 +4,7 @@ import { and, between, eq, inArray } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db";
+import { isAdmin } from "@/lib/auth";
 import { dayLabel, leagueToday, ME_COOKIE, weekDays, weekStartOf } from "@/lib/config";
 import { discordTags, postToDiscord } from "@/lib/discord";
 import { firstName, loadLeague, pairingOptions } from "@/lib/league";
@@ -146,7 +147,8 @@ export async function askWeekAction(form: FormData) {
   const url = await siteUrl();
   await db.insert(schema.scheduleWeeks).values({ weekStart: week, askedBy: player.id }).onConflictDoNothing();
   const [row] = await db.select().from(schema.scheduleWeeks).where(eq(schema.scheduleWeeks.weekStart, week));
-  if (row.lastPingAt && Date.now() - row.lastPingAt.getTime() < PING_COOLDOWN_MS) {
+  // Admins can always resend; everyone else is limited to one ping per cooldown.
+  if (row.lastPingAt && Date.now() - row.lastPingAt.getTime() < PING_COOLDOWN_MS && !(await isAdmin())) {
     redirect(`/schedule?week=${week}&ping=wait`);
   }
   const answered = await db

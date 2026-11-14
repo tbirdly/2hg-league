@@ -43,7 +43,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
       : sp.ping === "sent"
         ? "Sent to Discord."
         : sp.ping === "wait"
-          ? "Discord was pinged for this week in the last 3 hours. Try again later."
+          ? "Discord was pinged for this week in the last 3 hours. Try again later, or sign in on the Admin page to resend now."
           : sp.ping === "none"
             ? "Everyone has already answered for this week."
             : null;
